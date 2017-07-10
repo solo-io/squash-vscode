@@ -3,7 +3,6 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import * as shelljs from 'shelljs';
-import * as pdeadline from 'promise-deadline';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -17,13 +16,10 @@ export function activate(context: vscode.ExtensionContext) {
     // Now provide the implementation of the command with  registerCommand
     // The commandId parameter must match the command field in package.json
     const subscriptions = [
-        vscode.commands.registerCommand('extension.sayHello', () => {
-            // The code you place here will be executed every time your command is executed
-
-            // Display a message box to the user
-            vscode.window.showInformationMessage('Hello World!');
-        }),
         vscode.commands.registerCommand('extension.attachToPod', attachToPod),
+        vscode.commands.registerCommand('extension.addApp', addApplication),
+        vscode.commands.registerCommand('extension.deletePod', deletePod),
+        vscode.commands.registerCommand('extension.waitForBreakpoint', waitForBreakpoint),
     ];
 
 
@@ -48,7 +44,9 @@ class PodPickItem implements vscode.QuickPickItem {
     pod: any;
 
     constructor(pod: any) {
-        this.label = pod["metadata"]["name"] ;
+        let podname = pod["metadata"]["name"];
+        let nodename  = pod["spec"]["nodeName"];
+        this.label = `${podname} (${nodename})`;
         this.description = "pod" ;
         this.pod = pod;
      }
@@ -69,59 +67,136 @@ class ContainerPickItem implements vscode.QuickPickItem {
 }
 
 
+function selectPod() : Promise<any> {
+     return getPods().then( (pods) => {
+
+        let podItems : PodPickItem[] = [];
+        for (let pod of pods) {
+            podItems.push(new PodPickItem(pod));
+        }
+
+        return vscode.window.showQuickPick(podItems).then((item) => {
+            if (item) {
+                return item.pod;
+            } else {
+                return undefined;
+            }
+        });
+});
+}
+
+function deletePod() : Promise<any> {
+     return selectPod().then( (pod) => {
+        if (pod) {
+            let podname = pod["metadata"]["name"];
+            return kubectl(`delete pod ${podname}`)
+        }
+     }).catch(handleError);
+}
+
+function selectContainer(pod) : Promise<any> {
+
+    let containerItems : ContainerPickItem[] = [];
+    let selectedpod =  pod;
+    for (let container of selectedpod["spec"]["containers"]) {
+        containerItems.push(new ContainerPickItem(container))
+    }
+
+    return new Promise<ContainerPickItem>((resolve, reject) => {
+        vscode.window.showQuickPick(containerItems).then((item) => {resolve(item);});
+    }).then((item) => {
+            if (item) {
+                return item.container;
+            } else {
+                return undefined;
+            }
+        });
+}
+
+
+function chooseImage() : Promise<string> {
+    const custom = "-- custom --";
+    
+    return getImages().then((images) => {
+        images.push(custom);
+        return vscode.window.showQuickPick(images);
+    }).then((image) => {
+        if (image) {
+            if (image == custom) {
+                return vscode.window.showInputBox().then(
+                    (img) => {
+                        if (img) {
+                            return img;
+                        }
+                    }
+                );
+            } else {
+                return image;         
+            }
+        }
+    });
+}
+
+function syncBreakpoints() {
+    return chooseImage().then((img) => {
+       // vscode.
+    });
+}
+
+function waitForBreakpoint() {
+    return chooseImage().then((img) => {
+        waitForAttachment(img, null).then((remote) => {
+            return waitAndDebug(img, null);
+        });
+    });
+}
+
+function addApplication() {
+    const custom = "-- custom --";
+    
+    let promise = chooseImage().then((img) => {
+        if (img) {
+            return dbgclient(`app add "${img}"`);
+        }
+    });
+
+    return promise.catch(handleError);
+}
+
+const handleError = (err) => {
+    if (err) {
+        vscode.window.showErrorMessage(err.message);
+    }
+};
+
 function attachToPod() {
     // ask the user to chose a pod
     // and image id
 
-    get_pods().then( (pods) => {
-        let podItems : PodPickItem[] = [];
-        for (let pod of pods) {
-            podItems.push(new PodPickItem(pod))
-        }
-            
-        return vscode.window.showQuickPick(podItems).then((value) => {
-            if (value) {
-            let containerItems : ContainerPickItem[] = [];
-            let selectedpod =  value.pod;
-            for (let container of selectedpod["spec"]["containers"]) {
-                containerItems.push(new ContainerPickItem(container))
-            }
-
-            return vscode.window.showQuickPick(containerItems).then((value) => {
-                if (value) {
-                    let containerimage = value.container["image"];
-                    let containername = value.container["name"];
-                    let podname = selectedpod["metadata"]["name"];
+    let containerPromise = selectPod().then((pod) => {
+        if (pod) {
+            return selectContainer(pod).then((container) => {
+                if (container) {
+                    let containerimage = container["image"];
+                    let containername = container["name"];
+                    let podname = pod["metadata"]["name"];
                     console.log(`running debug container ${containerimage}, ${podname}, ${containername}`);
                     return _debugContainer(containerimage, podname, containername);
                 }
             });
         }
-    }
-    );
-
-}).catch((err)=>{
-        vscode.window.showErrorMessage(err.message);
     });
 
-/*
+    containerPromise.catch(handleError);
 
-    vscode.window.showInputBox({ prompt: `Please provide: <imageid> <pod>` }).then((value) => {
-        if (value) {
-            let values = value.trim().split(/\s+/);
-            if (values.length != 2) {
-                console.log(values);
-                vscode.window.showErrorMessage('Invalid number of arguments');
-                return;
-            }
+}
 
-            let image = values[0];
-            let pod = values[1];
-            debugContainer(image, pod);
-        }
+function getImages() : Promise<string[]> {
+    return exec("docker images --format '{{.Repository}}:{{.Tag}}' --filter='dangling=false' -q").then((output) => {
+        let output2 : string[] =  output.split("\n");
+        output2 = output2.filter(v => v!='');
+        return output2;
     });
-
-    */
 }
 
 function registerApp(imageid, breakpoints) {
@@ -139,51 +214,45 @@ function debugContainer(imageid, pod) {
     );
 }
 
+function waitAndDebug(imageid, token) {
+    return waitForAttachment(imageid, token).then((remote) => {
+        console.log(`Attachment waited! image, token: "${imageid}" "${token}";remote: ${remote}`);
+        // TODO: create a real forwarder and close it in the end.
+        let forwarder = portforward(1234, remote);
+        vscode.window.showInformationMessage('Starting debug session' + remote);
+
+        return vscode.commands.executeCommand(
+            'vscode.startDebug',
+            {
+                type: "gdb",
+                request: "attach",
+                name: "Attach to gdbserver",
+              //  executable: vscode.workspace.rootPath + "/target/debug/buggy",
+                target: "localhost:1234",
+                remote: true,
+                cwd: vscode.workspace.rootPath
+            });
+        });
+}
+
 function _debugContainer(imageid, pod, container) {
     return requestAttachment(imageid, pod, container).then(
         (token) => {
-            console.log(`requestAttachment token $(token)`);
-            waitForAttachment(imageid, token).then(
-                (remote) => {
-                    console.log(`Attachment waited!`);
-                    portforward(1234, remote).then(
-                        // TODO: kill the port forward when debugging session ends
-                        () => {
-                            vscode.window.showInformationMessage('Starting debug session' + remote);
-
-                            return vscode.commands.executeCommand(
-                                'vscode.startDebug',
-                                {
-                                    type: "gdb",
-                                    request: "attach",
-                                    name: "Attach to gdbserver",
-                                    executable: vscode.workspace.rootPath + "/target/debug/buggy",
-                                    target: "localhost:1234",
-                                    remote: true,
-                                    cwd: vscode.workspace.rootPath
-                                }
-                            );
-                        }
-
-                    );
-                }
-
-            );
-        }
-    );
+            console.log(`requestAttachment token ${token}`);
+            return waitAndDebug(imageid, token);
+        }).catch(handleError);
 
 }
 
-function get_pods(): Promise<any> {
-    return kubectl("get pods").then((podsjson) => {
+function getPods(): Promise<any> {
+    return kubectl_get("pods").then((podsjson) => {
             return podsjson["items"];
     });
 }
 
 function findcontainer(imageid, podname): Promise<string> {
-    return kubectl("get pods").then((podsjson) => {
-
-        for (let pod of podsjson["items"]) {
+    return getPods().then((pods) => {
+        for (let pod of pods) {
             if (pod["metadata"]["name"] == podname) {
                 for (let container of pod["spec"]["containers"]) {
                     if (imageid == container["image"]) {
@@ -205,24 +274,36 @@ function requestAttachment(imgid, pod, container): Promise<string> {
         return res["DebugSessionId"];
     });
 }
-function waitForAttachment(imgid, token): Promise<[string, number]> {
-    return pdeadline.deadline(_waitForAttachmentDeadline(imgid, token), 60 * 1000)
+function waitForAttachment(imgid, token): Promise<string> {
+    let deadline = process.hrtime();
+    deadline[0] += 60;
+    return _waitForAttachmentDeadline(imgid, token, deadline)
 }
 
-function _waitForAttachmentDeadline(imgid, token): Promise<[string, number]> {
-    return dbgclient(`session  wait ${imgid} ${token}`).then((res) => {
-        return res["DebugSessionId"];
+function _waitForAttachmentDeadline(imgid, token, deadline): Promise<string> {
+    let waitcmd = `session  wait ${imgid}`;
+    if (token) {
+        waitcmd = waitcmd + ` ${token}`
+    }
+
+    return dbgclient(waitcmd).then((res) => {
+        console.log(`Wait returned: ${res}`)
+        return res["DebugUrl"];
     }).catch((err) => {
-        let [code, errinfo] = err[0];
-        let errinfojson = JSON.parse(errinfo);
+        let nowtime = process.hrtime();
+        if (nowtime[0] > deadline[0]) {
+            throw err;
+        }
+
+        let errinfojson = JSON.parse(err.stderr);
         if (errinfojson["Type"] == "Timeout") {
-            return _waitForAttachmentDeadline(imgid, token)
+            return _waitForAttachmentDeadline(imgid, token, deadline)
         }
     });
 }
 
-function portforward(port, remote): Promise<void> {
-    let remoteparts = remote["DebugUrl"].split(":");
+function portforward(port, remote) {
+    let remoteparts = remote.split(":");
     if (remoteparts.length != 2) {
         throw new Error('Invalid remote');
     }
@@ -230,14 +311,18 @@ function portforward(port, remote): Promise<void> {
     let podport = remoteparts[1];
 
     // exec async..
-    kubectl(`port-forward  ${pod} ${port}:${podport}`);
+    kubectl(`port-forward ${pod} ${port}:${podport}`).catch(handleError);
 
-    return Promise.resolve()
+}
+
+function kubectl_get(cmd): Promise<any> {
+    return kubectl("get -o json " + cmd).then(JSON.parse);
 }
 
 function kubectl(cmd): Promise<any> {
-    return execjson(get_conf_or("kubectl-path","kubectl")  + " -o json " + cmd);
+    return exec(get_conf_or("kubectl-path","kubectl") + " " + cmd);
 }
+
 
 function get_conf_or(k,d) {
     let config = vscode.workspace.getConfiguration('vs-squash');
@@ -250,29 +335,28 @@ function get_conf_or(k,d) {
 
 
 function dbgclient(cmd): Promise<any> {
-    return execjson(get_conf_or("dbgclient-path","dbgclient")  + " --json=true " + cmd);
-}
+    let url = get_conf_or("dbgserver-url","");
 
-function execjson(cmd): Promise<any> {
-    return exec(cmd).then((output) => {
-        return JSON.parse(output);
-    });
+    if (url) {
+        url = " --url="+url
+    }
+
+    return exec(get_conf_or("dbgclient-path","dbgclient")  + url + " --json=true " + cmd).then(JSON.parse);
 }
 
 function exec(cmd): Promise<any> {
-
+    shelljs.env["http_proxy"] = "localhost:12347";
+    console.log("Executing: " + cmd);
     return new Promise((resolve, reject) => {
-
         let handler = function (code, stdout, stderr) {
             if (code !== 0) {
-                reject(new ExecError(code, stderr))
+                reject(new ExecError(code, stderr));
+            } else {
+                resolve(stdout);
             }
-            resolve(stdout)
         };
-        shelljs.exec(cmd, handler)
-
+        shelljs.exec(cmd, handler);
     });
-
 }
 
 // https://github.com/Microsoft/TypeScript/wiki/Breaking-Changes#extending-built-ins-like-error-array-and-map-may-no-longer-work
@@ -285,6 +369,19 @@ class ExecError extends Error {
 
         // Set the prototype explicitly.
         Object.setPrototypeOf(this, ExecError.prototype);
+
+        this.code = code;
+        this.stderr = stderr;
     }
+
+    getCode() {
+        return this.code;
+    }
+
+    getStderr() {
+        return this.stderr;
+    }
+
 }
+
 

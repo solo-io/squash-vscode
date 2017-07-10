@@ -11,8 +11,9 @@
         "Other"
     ],
     "activationEvents": [
-        "onCommand:extension.sayHello",
-        "onCommand:extension.attachToPod"
+        "onCommand:extension.attachToPod",
+        "onCommand:extension.addApp",
+        "onCommand:extension.deletePod"
     ],
     "main": "./out/src/extension",
     "contributes": {
@@ -28,17 +29,26 @@
                     "type": "string",
                     "default": null,
                     "description": "File path to a dbgclient binary."
+                },
+                "vs-squash.dbgserver-url": {
+                    "type": "string",
+                    "default": null,
+                    "description": "The API endpoint of the debug server."
                 }
             }
         },
         "commands": [
             {
-                "command": "extension.sayHello",
-                "title": "Hello World"
+                "command": "extension.addApp",
+                "title": "Add application to dbg server"
             },
             {
                 "command": "extension.attachToPod",
                 "title": "Attach to running pod"
+            },
+            {
+                "command": "extension.deletePod",
+                "title": "Delete a pod"
             }
         ]
     },
@@ -49,8 +59,7 @@
         "test": "node ./node_modules/vscode/bin/test"
     },
     "dependencies": {
-        "shelljs": "^0.7.8",
-        "promise-deadline": "^1.0.0"
+        "shelljs": "^0.7.8"
     },
     "devDependencies": {
         "typescript": "^2.0.3",
