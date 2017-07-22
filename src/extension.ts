@@ -218,28 +218,35 @@ function waitAndDebug(imageid, token) {
     return waitForAttachment(imageid, token).then((remote) => {
         console.log(`Attachment waited! image, token: "${imageid}" "${token}";remote: ${remote}`);
         // TODO: create a real forwarder and close it in the end.
-        let forwarder = portforward(1234, remote);
-        vscode.window.showInformationMessage('Starting debug session' + remote);
+        return kubectl_portforward(remote).then(
+        (number) => {
+            vscode.window.showInformationMessage('Starting debug session' + remote);
 
-        return vscode.commands.executeCommand(
-            'vscode.startDebug',
-            {
-                type: "gdb",
-                request: "attach",
-                name: "Attach to gdbserver",
-              //  executable: vscode.workspace.rootPath + "/target/debug/buggy",
-                target: "localhost:1234",
-                remote: true,
-                cwd: vscode.workspace.rootPath
-            });
+            return vscode.commands.executeCommand(
+                'vscode.startDebug',
+                {
+                    type: "gdb",
+                    request: "attach",
+                    name: "Attach to gdbserver",
+                //  executable: vscode.workspace.rootPath + "/target/debug/buggy",
+                    target: "localhost:"+number,
+                    remote: true,
+                    cwd: vscode.workspace.rootPath
+                });
+            
+        });
         });
 }
 
 function _debugContainer(imageid, pod, container) {
     return requestAttachment(imageid, pod, container).then(
         (token) => {
-            console.log(`requestAttachment token ${token}`);
-            return waitAndDebug(imageid, token);
+            if (token) {
+                console.log(`requestAttachment token ${token}`);
+                return waitAndDebug(imageid, token);
+            }
+            throw new Error('Attachment token not found');
+            
         }).catch(handleError);
 
 }
@@ -271,34 +278,31 @@ function requestAttachment(imgid, pod, container): Promise<string> {
     console.log(`requestAttachment ${imgid}, ${pod}, ${container}`);
     
     return dbgclient(`app attach ${imgid} ${pod} ${container}`).then((res) => {
-        return res["DebugSessionId"];
+        return res["id"];
     });
 }
 function waitForAttachment(imgid, token): Promise<string> {
     let deadline = process.hrtime();
     deadline[0] += 60;
-    return _waitForAttachmentDeadline(imgid, token, deadline)
+    return _waitForAttachmentDeadline(token, deadline)
 }
 
-function _waitForAttachmentDeadline(imgid, token, deadline): Promise<string> {
-    let waitcmd = `session  wait ${imgid}`;
-    if (token) {
-        waitcmd = waitcmd + ` ${token}`
-    }
+function _waitForAttachmentDeadline(token, deadline): Promise<string> {
+    let waitcmd = `session  wait ${token}`;
 
     return dbgclient(waitcmd).then((res) => {
         console.log(`Wait returned: ${res}`)
-        return res["DebugUrl"];
+        return res["url"];
     }).catch((err) => {
-        let nowtime = process.hrtime();
-        if (nowtime[0] > deadline[0]) {
-            throw err;
-        }
-
         let errinfojson = JSON.parse(err.stderr);
         if (errinfojson["Type"] == "Timeout") {
-            return _waitForAttachmentDeadline(imgid, token, deadline)
+            let nowtime = process.hrtime();
+            if (nowtime[0] > deadline[0]) {
+                throw err;
+            }
+            return _waitForAttachmentDeadline(token, deadline)
         }
+        throw err;
     });
 }
 
@@ -320,6 +324,8 @@ function kubectl_get(cmd): Promise<any> {
 }
 
 function kubectl(cmd): Promise<any> {
+    setproxy();
+    
     return exec(get_conf_or("kubectl-path","kubectl") + " " + cmd);
 }
 
@@ -333,6 +339,55 @@ function get_conf_or(k,d) {
     return v;
 }
 
+function setproxy() {
+
+
+    let proxy = get_conf_or("kubectl-proxy","");
+    if (proxy) {
+        shelljs.env["http_proxy"] = proxy;
+    }
+}
+
+function kubectl_portforward(remote) : Promise<number> {
+    let remoteparts = remote.split(":");
+    if (remoteparts.length != 2) {
+        throw new Error('Invalid remote');
+    }
+    let pod = remoteparts[0];
+    let podport = remoteparts[1];
+
+    setproxy();
+
+    let cmd = get_conf_or("kubectl-path","kubectl") + " port-forward " + ` ${pod} :${podport}`;
+    console.log("Executing: " + cmd);
+    let p = new Promise<number>((resolve, reject) => {
+        let resolved = false;
+        let handler = function (code, stdout, stderr) {
+            if (resolved != true) {
+                if (code !== 0) {
+                    reject(new ExecError(code, stderr));
+                } else {
+                    reject(new Error("Didn't receive port"));
+                }
+            } else {
+                    console.log(`port forward ended unexpectly: ${code} ${stdout} ${stderr}`)
+            }
+        };
+        let child = shelljs.exec(cmd, handler);
+        let stdout = "";
+        child.stdout.on('data', function(data) {
+            stdout += data;
+            let portRegexp = /from\s+.+:(\d+)\s+->/g;
+            let match = portRegexp.exec(stdout);
+            if (!match != null) {
+                resolved = true;
+                resolve(parseInt(match[1]))
+            }
+        });
+    });
+
+    return p;
+}
 
 function dbgclient(cmd): Promise<any> {
     let url = get_conf_or("dbgserver-url","");
@@ -345,7 +400,6 @@ function dbgclient(cmd): Promise<any> {
 }
 
 function exec(cmd): Promise<any> {
-    shelljs.env["http_proxy"] = "localhost:12347";
     console.log("Executing: " + cmd);
     return new Promise((resolve, reject) => {
         let handler = function (code, stdout, stderr) {

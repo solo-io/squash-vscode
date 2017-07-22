@@ -25,6 +25,11 @@
                     "default": null,
                     "description": "File path to a kubectl binary."
                 },
+                "vs-squash.kubectl-proxy": {
+                    "type": "string",
+                    "default": null,
+                    "description": "HTTP proxy for kubectl."
+                },
                 "vs-squash.dbgclient-path": {
                     "type": "string",
                     "default": null,
