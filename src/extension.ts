@@ -220,10 +220,24 @@ function waitAndDebug(imageid, token) {
         // TODO: create a real forwarder and close it in the end.
         return kubectl_portforward(remote).then(
         (number) => {
+            console.log("Local port forward for debug server is: localhost:"+number);
             vscode.window.showInformationMessage('Starting debug session' + remote);
 
             return vscode.commands.executeCommand(
                 'vscode.startDebug',
+                {
+                    "name": "Remote",
+                    "type": "go",
+                    "request": "launch",
+                    "mode": "remote",
+                    "port": number,
+                    "host": "127.0.0.1",
+                    "program": "${workspaceRoot}",
+                    "env": {},
+                    "args": [],
+                    "showLog": true
+                }
+                /*
                 {
                     type: "gdb",
                     request: "attach",
@@ -232,7 +246,9 @@ function waitAndDebug(imageid, token) {
                     target: "localhost:"+number,
                     remote: true,
                     cwd: vscode.workspace.rootPath
-                });
+                }
+                */
+            );
             
         });
         });
@@ -277,7 +293,7 @@ function findcontainer(imageid, podname): Promise<string> {
 function requestAttachment(imgid, pod, container): Promise<string> {
     console.log(`requestAttachment ${imgid}, ${pod}, ${container}`);
     
-    return dbgclient(`app attach ${imgid} ${pod} ${container}`).then((res) => {
+    return dbgclient(`app attach ${imgid} ${pod} ${container} dlv`).then((res) => {
         return res["id"];
     });
 }
