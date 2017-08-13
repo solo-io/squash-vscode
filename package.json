@@ -1,7 +1,7 @@
 {
-    "name": "vscode-smash",
-    "displayName": "vscode-smash",
-    "description": "Debug via the smash distributed debugger",
+    "name": "vscode-squash",
+    "displayName": "vscode-squash",
+    "description": "Debug via the squash distributed debugger",
     "version": "0.0.1",
     "publisher": "f",
     "engines": {
@@ -11,10 +11,10 @@
         "Other"
     ],
     "activationEvents": [
-        "onCommand:extension.attachToPod",
-        "onCommand:extension.addApp",
-        "onCommand:extension.waitForService",
-        "onCommand:extension.deletePod"
+        "onCommand:vs-squash.attachToPod",
+        "onCommand:vs-squash.addApp",
+        "onCommand:vs-squash.waitForService",
+        "onCommand:vs-squash.stopWaitForService"
     ],
     "main": "./out/src/extension",
     "contributes": {
@@ -29,7 +29,7 @@
                 "vs-squash.kubectl-proxy": {
                     "type": "string",
                     "default": null,
-                    "description": "HTTP proxy for kubectl."
+                    "description": "HTTP proxy for kubectl port-forward."
                 },
                 "vs-squash.dbgclient-path": {
                     "type": "string",
@@ -45,20 +45,20 @@
         },
         "commands": [
             {
-                "command": "extension.addApp",
-                "title": "Squash: Add application to dbg server"
+                "command": "vs-squash.addApp",
+                "title": "Squash: Add service to Squash server"
             },
             {
-                "command": "extension.waitForService",
-                "title": "Squash: Wait for a debug event on a service"
+                "command": "vs-squash.waitForService",
+                "title": "Squash: Resume waiting for a debug event on a service"
             },
             {
-                "command": "extension.attachToPod",
-                "title": "Squash: Attach to running pod"
+                "command": "vs-squash.attachToPod",
+                "title": "Squash: Attach to a container"
             },
             {
-                "command": "extension.deletePod",
-                "title": "Squash: Delete a pod"
+                "command": "vs-squash.stopWaitForService",
+                "title": "Squash: Stop waiting for a debug event on a service"
             }
         ]
     },
