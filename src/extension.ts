@@ -18,10 +18,10 @@ export function activate(context: vscode.ExtensionContext) {
     // The commandId parameter must match the command field in package.json
     let se = new SquashExtention();
     const subscriptions = [
-        vscode.commands.registerCommand('vs-squash.attachToPod', () => {se.attachToPod}),
-        vscode.commands.registerCommand('vs-squash.addApp', () => {se.addApplication}),
-        vscode.commands.registerCommand('vs-squash.waitForService', () => {se.waitForService()}),
-        vscode.commands.registerCommand('vs-squash.stopWaitForService', () => {se.stopWaitForService()})
+        vscode.commands.registerCommand('vs-squash.attachToPod', () => {se.attachToPod();}),
+        vscode.commands.registerCommand('vs-squash.addApp', () => {se.addApplication();}),
+        vscode.commands.registerCommand('vs-squash.waitForService', () => {se.waitForService();}),
+        vscode.commands.registerCommand('vs-squash.stopWaitForService', () => {se.stopWaitForService();})
     ];
 
 
@@ -177,7 +177,7 @@ class SquashExtention {
                                     return this.chooseDebugger().then((dbgr) => {
                                         if (dbgr) {
                                             let servicename = service["metadata"]["name"]
-                                            return dbgclient(`app add "${service}" "${img}" "${dbgr}"`);
+                                            return dbgclient(`app add "${servicename}" "${img}" "${dbgr}"`);
                                         }
                                     });
                                 }
@@ -285,7 +285,6 @@ class SquashExtention {
     cancelWaiting() {
         this.stopWaiting = true;
         this.waiter.hideWaiting();
-        
     }
 
     waitAndDebug(token, timeout = 60) {
