@@ -167,6 +167,10 @@ class SquashExtention {
     }
 
     addApplication() {
+        /*
+         * TODO: When we support more than one cluster environment, add a question here asking
+         * which environment to use first.
+         */
         let promise = this.chooseService().then((service) => {
             if (service) {
                 return this.getImagesOfService(service).then(
