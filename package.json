@@ -12,9 +12,9 @@
     ],
     "activationEvents": [
         "onCommand:vs-squash.attachToPod",
-        "onCommand:vs-squash.addApp",
-        "onCommand:vs-squash.waitForService",
-        "onCommand:vs-squash.stopWaitForService"
+        "onCommand:vs-squash.startServiceWatch",
+        "onCommand:vs-squash.waitForServiceSession",
+        "onCommand:vs-squash.stopWaitForServiceSession"
     ],
     "main": "./out/src/extension",
     "contributes": {
@@ -45,11 +45,11 @@
         },
         "commands": [
             {
-                "command": "vs-squash.addApp",
-                "title": "Squash: Add service to Squash server"
+                "command": "vs-squash.startServiceWatch",
+                "title": "Squash: Instruct the Squash server to start watching a service for debug events"
             },
             {
-                "command": "vs-squash.waitForService",
+                "command": "vs-squash.waitForServiceSession",
                 "title": "Squash: Resume waiting for a debug event on a service"
             },
             {
@@ -57,7 +57,7 @@
                 "title": "Squash: Attach to a container"
             },
             {
-                "command": "vs-squash.stopWaitForService",
+                "command": "vs-squash.stopWaitForServiceSession",
                 "title": "Squash: Stop waiting for a debug event on a service"
             }
         ]

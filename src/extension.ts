@@ -19,11 +19,10 @@ export function activate(context: vscode.ExtensionContext) {
     let se = new SquashExtention();
     const subscriptions = [
         vscode.commands.registerCommand('vs-squash.attachToPod', () => {se.attachToPod();}),
-        vscode.commands.registerCommand('vs-squash.addApp', () => {se.addApplication();}),
-        vscode.commands.registerCommand('vs-squash.waitForService', () => {se.waitForService();}),
-        vscode.commands.registerCommand('vs-squash.stopWaitForService', () => {se.stopWaitForService();})
+        vscode.commands.registerCommand('vs-squash.startServiceWatch', () => {se.startServiceWatch();}),
+        vscode.commands.registerCommand('vs-squash.waitForServiceSession', () => {se.waitForServiceSession();}),
+        vscode.commands.registerCommand('vs-squash.stopWaitForServiceSession', () => {se.stopWaitForServiceSession();})
     ];
-
 
     subscriptions.forEach((element) => {
         context.subscriptions.push(element);
@@ -166,10 +165,15 @@ class SquashExtention {
         return picks
     }
 
-    addApplication() {
+    startServiceWatch() {
         /*
-         * TODO: When we support more than one cluster environment, add a question here asking
-         * which environment to use first.
+         * TODO: As soon as we support more then one container cluster orchestration, add a question here asking
+         * which one to use. 
+         * 
+         *  1. kubernetes
+         *  2. cloud foundry
+         *  3. docker swarm
+         *  4. mesos
          */
         let promise = this.chooseService().then((service) => {
             if (service) {
@@ -191,11 +195,15 @@ class SquashExtention {
                 );
             }
         });
-
+        
         promise.then((dbgconfig) => {
             if (dbgconfig) {
                 let id = dbgconfig.id;
                 vscode.window.showInformationMessage('Added debug config id:' + id);
+                return vscode.commands.executeCommand(
+                                                    'vs-squash.waitForServiceSession',
+                                                    dbgconfig
+                                                );
             }
 
         })
@@ -203,7 +211,7 @@ class SquashExtention {
         return promise.catch(handleError);
     }
     
-    stopWaitForService() {
+    stopWaitForServiceSession() {
         vscode.window.showInformationMessage("Stop waiting for session?", "Yes", "No").then(
             (answer) => {
                 if (answer == "Yes") {
@@ -213,7 +221,11 @@ class SquashExtention {
         );
     }
 
-    waitForService() {
+    waitForServiceSession(dbgconfig = null) {
+
+        if (dbgconfig) {
+            return this.waitAndDebug(dbgconfig.id, 60 * 60);
+        } 
 
         let promise = dbgclient(`app list`).then(
             (dbgconfiglist) => {
@@ -227,7 +239,6 @@ class SquashExtention {
                 return vscode.window.showQuickPick(dbgItems).then((item) => {
                     if (item) {
                         // wait for an hour
-                        // TODO: need to provide cancelation UI
                         return this.waitAndDebug(item.dbgconfig.id, 60 * 60);
                     }
                 });
@@ -489,8 +500,8 @@ class WaitWidget {
         // Create as needed
         if (!this._statusBarItem) {
             this._statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
-            this._statusBarItem.text = "Waiting for session"
-            this._statusBarItem.command = "vs-squash.stopWaitForService"
+            this._statusBarItem.text = "⏱️ Waiting for Squash session"
+            this._statusBarItem.command = "vs-squash.stopWaitForServiceSession"
         }
 
         this._statusBarItem.show();
