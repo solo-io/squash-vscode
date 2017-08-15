@@ -2,7 +2,7 @@
     "name": "vscode-squash",
     "displayName": "vscode-squash",
     "description": "Debug via the squash distributed debugger",
-    "version": "0.0.1",
+    "version": "0.1.0",
     "publisher": "f",
     "engines": {
         "vscode": "^1.12.0"
@@ -31,15 +31,15 @@
                     "default": null,
                     "description": "HTTP proxy for kubectl port-forward."
                 },
-                "vs-squash.dbgclient-path": {
+                "vs-squash.squash-path": {
                     "type": "string",
                     "default": null,
-                    "description": "File path to a dbgclient binary."
+                    "description": "File path to a squash command line binary."
                 },
-                "vs-squash.dbgserver-url": {
+                "vs-squash.squash-server-url": {
                     "type": "string",
                     "default": null,
-                    "description": "The API endpoint of the debug server."
+                    "description": "The API endpoint of the squash server."
                 }
             }
         },

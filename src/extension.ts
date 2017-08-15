@@ -137,7 +137,8 @@ function kubectl_portforward(remote): Promise<number> {
                 console.log(`port forward ended unexpectly: ${code} ${stdout} ${stderr} `)
             }
         };
-        let child = shelljs.exec(cmd, get_kubectl_proxy_options(), handler);
+        let proxyopts = get_kubectl_proxy_options();
+        let child = shelljs.exec(cmd, proxyopts, handler);
         let stdout = "";
         child.stdout.on('data', function (data) {
             stdout += data;
@@ -153,14 +154,14 @@ function kubectl_portforward(remote): Promise<number> {
     return p;
 }
 
-function dbgclient(cmd): Promise<any> {
-    let url = get_conf_or("dbgserver-url", "");
+function squash(cmd): Promise<any> {
+    let url = get_conf_or("squash-server-url", "");
 
     if (url) {
         url = " --url=" + url
     }
 
-    return exec(get_conf_or("dbgclient-path", "dbgclient") + url + " --json=true " + cmd).then(JSON.parse);
+    return exec(get_conf_or("squash-path", "squash") + url + " --json=true " + cmd).then(JSON.parse);
 }
 
 class WaitWidget {
@@ -340,7 +341,7 @@ class SquashExtention {
                                     return this.chooseDebugger().then((dbgr) => {
                                         if (dbgr) {
                                             let servicename = service["metadata"]["name"]
-                                            return dbgclient(`app add "${servicename}" "${img}" "${dbgr}"`);
+                                            return squash(`app add "${servicename}" "${img}" "${dbgr}"`);
                                         }
                                     });
                                 }
@@ -382,7 +383,7 @@ class SquashExtention {
             return this.waitAndDebug(dbgconfig.id, 60 * 60);
         }
 
-        let promise = dbgclient(`app list`).then(
+        let promise = squash(`app list`).then(
             (dbgconfiglist) => {
                 let dbgItems: pickitems.DbgConfigPickItem[] = [];
 
@@ -470,7 +471,7 @@ class SquashExtention {
 
         let waitcmd = `session  wait ${token} `;
 
-        return dbgclient(waitcmd).then((res) => {
+        return squash(waitcmd).then((res) => {
             console.log(`Wait returned: ${res} `)
             return res;
         }).catch((err) => {
@@ -501,7 +502,7 @@ class SquashExtention {
             let dbgconfigid = dbgsession["debugConfigId"];
             console.log(`Attachment waited! dbgconfigid: "${token}";remote: ${remote}`);
 
-            return dbgclient("list " + dbgconfigid).then((dbgconfig) => {
+            return squash("app list " + dbgconfigid).then((dbgconfig) => {
 
                 // TODO: close the forwarder in the end of debugsession.
                 // not sure how to tell when the debug session ends. most chances the pod will
@@ -634,7 +635,7 @@ class SquashExtention {
         return new Promise((resolve, reject) => {
             this.chooseDebugger().then((dbgr) => {
                 if (dbgr) {
-                    dbgclient(`app attach ${imgid} ${pod} ${container} ${dbgr} `).then((res) => {
+                    squash(`app attach ${imgid} ${pod} ${container} ${dbgr} `).then((res) => {
                         return resolve(res["id"]);
                     });
                 }
