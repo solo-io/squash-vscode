@@ -18,10 +18,10 @@ export function activate(context: vscode.ExtensionContext) {
     // The commandId parameter must match the command field in package.json
     let se = new SquashExtention();
     const subscriptions = [
-        vscode.commands.registerCommand('vs-squash.attachToPod', () => {se.attachToPod();}),
-        vscode.commands.registerCommand('vs-squash.startServiceWatch', () => {se.startServiceWatch();}),
-        vscode.commands.registerCommand('vs-squash.waitForServiceSession', () => {se.waitForServiceSession();}),
-        vscode.commands.registerCommand('vs-squash.stopWaitForServiceSession', () => {se.stopWaitForServiceSession();})
+        vscode.commands.registerCommand('vs-squash.attachToPod', () => { se.attachToPod(); }),
+        vscode.commands.registerCommand('vs-squash.startServiceWatch', () => { se.startServiceWatch(); }),
+        vscode.commands.registerCommand('vs-squash.waitForServiceSession', () => { se.waitForServiceSession(); }),
+        vscode.commands.registerCommand('vs-squash.stopWaitForServiceSession', () => { se.stopWaitForServiceSession(); })
     ];
 
     subscriptions.forEach((element) => {
@@ -31,6 +31,161 @@ export function activate(context: vscode.ExtensionContext) {
 
 // this method is called when your extension is deactivated
 export function deactivate() {
+}
+
+const handleError = (err) => {
+    if (err) {
+        vscode.window.showErrorMessage(err.message);
+    }
+};
+
+
+function exec(cmd): Promise<any> {
+    console.log("Executing: " + cmd);
+    let promise = new Promise((resolve, reject) => {
+        let handler = function (code, stdout, stderr) {
+            if (code !== 0) {
+                reject(new ExecError(code, stderr));
+            } else {
+                resolve(stdout);
+            }
+        };
+
+        let options = { async: true };
+        let child = shelljs.exec(cmd, options, handler);
+
+    });
+
+
+    return promise;
+}
+
+// https://github.com/Microsoft/TypeScript/wiki/Breaking-Changes#extending-built-ins-like-error-array-and-map-may-no-longer-work
+class ExecError extends Error {
+    code: number;
+    stderr: string;
+
+    constructor(code: number, stderr: string) {
+        super(stderr.trim());
+
+        // Set the prototype explicitly.
+        Object.setPrototypeOf(this, ExecError.prototype);
+
+        this.code = code;
+        this.stderr = stderr;
+    }
+
+    getCode() {
+        return this.code;
+    }
+
+    getStderr() {
+        return this.stderr;
+    }
+
+}
+
+
+function kubectl_get(cmd: string, ...args: string[]): Promise<any> {
+    return kubectl("get -o json " + cmd + " " + args.join(" ")).then(JSON.parse);
+}
+
+function kubectl(cmd): Promise<any> {
+    return exec(get_conf_or("kubectl-path", "kubectl") + " " + cmd);
+}
+
+
+function get_conf_or(k, d) {
+    let config = vscode.workspace.getConfiguration('vs-squash');
+    let v = config[k];
+    if (!v) {
+        return d;
+    }
+    return v;
+}
+
+function get_kubectl_proxy_options(): any {
+
+
+    let proxy = get_conf_or("kubectl-proxy", "");
+    if (proxy) {
+        return { env: { http_proxy: proxy } }
+    }
+    return null
+}
+
+function kubectl_portforward(remote): Promise<number> {
+    let remoteparts = remote.split(":");
+    if (remoteparts.length != 2) {
+        throw new Error('Invalid remote');
+    }
+    let pod = remoteparts[0];
+    let podport = remoteparts[1];
+
+    let cmd = get_conf_or("kubectl-path", "kubectl") + " port-forward " + ` ${pod} :${podport} `;
+    console.log("Executing: " + cmd);
+    let p = new Promise<number>((resolve, reject) => {
+        let resolved = false;
+        let handler = function (code, stdout, stderr) {
+            if (resolved != true) {
+                if (code !== 0) {
+                    reject(new ExecError(code, stderr));
+                } else {
+                    reject(new Error("Didn't receive port"));
+                }
+            } else {
+                console.log(`port forward ended unexpectly: ${code} ${stdout} ${stderr} `)
+            }
+        };
+        let child = shelljs.exec(cmd, get_kubectl_proxy_options(), handler);
+        let stdout = "";
+        child.stdout.on('data', function (data) {
+            stdout += data;
+            let portRegexp = /from\s+.+:(\d+)\s+->/g;
+            let match = portRegexp.exec(stdout);
+            if (!match != null) {
+                resolved = true;
+                resolve(parseInt(match[1]))
+            }
+        });
+    });
+
+    return p;
+}
+
+function dbgclient(cmd): Promise<any> {
+    let url = get_conf_or("dbgserver-url", "");
+
+    if (url) {
+        url = " --url=" + url
+    }
+
+    return exec(get_conf_or("dbgclient-path", "dbgclient") + url + " --json=true " + cmd).then(JSON.parse);
+}
+
+class WaitWidget {
+
+    private _statusBarItem: vscode.StatusBarItem;
+
+    public showWaiting() {
+
+        // Create as needed
+        if (!this._statusBarItem) {
+            this._statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
+            this._statusBarItem.text = "⏱️ Waiting for Squash session"
+            this._statusBarItem.command = "vs-squash.stopWaitForServiceSession"
+        }
+
+        this._statusBarItem.show();
+    }
+
+    public hideWaiting() {
+        this._statusBarItem.hide();
+    }
+
+    dispose() {
+        this._statusBarItem.dispose();
+    }
 }
 
 class SquashExtention {
@@ -195,22 +350,22 @@ class SquashExtention {
                 );
             }
         });
-        
+
         promise.then((dbgconfig) => {
             if (dbgconfig) {
                 let id = dbgconfig.id;
                 vscode.window.showInformationMessage('Added debug config id:' + id);
                 return vscode.commands.executeCommand(
-                                                    'vs-squash.waitForServiceSession',
-                                                    dbgconfig
-                                                );
+                    'vs-squash.waitForServiceSession',
+                    dbgconfig
+                );
             }
 
         })
 
         return promise.catch(handleError);
     }
-    
+
     stopWaitForServiceSession() {
         vscode.window.showInformationMessage("Stop waiting for session?", "Yes", "No").then(
             (answer) => {
@@ -225,7 +380,7 @@ class SquashExtention {
 
         if (dbgconfig) {
             return this.waitAndDebug(dbgconfig.id, 60 * 60);
-        } 
+        }
 
         let promise = dbgclient(`app list`).then(
             (dbgconfiglist) => {
@@ -302,6 +457,35 @@ class SquashExtention {
         this.waiter.hideWaiting();
     }
 
+    waitForAttachment(token, timeout): Promise<any> {
+        let deadline = process.hrtime();
+        deadline[0] += timeout;
+        return this._waitForAttachmentDeadline(token, deadline)
+    }
+
+    _waitForAttachmentDeadline(token, deadline): Promise<any> {
+        if (this.stopWaiting) {
+            return Promise.resolve(null)
+        }
+
+        let waitcmd = `session  wait ${token} `;
+
+        return dbgclient(waitcmd).then((res) => {
+            console.log(`Wait returned: ${res} `)
+            return res;
+        }).catch((err) => {
+            let errinfojson = JSON.parse(err.stderr);
+            if (errinfojson["Type"] == "Timeout") {
+                let nowtime = process.hrtime();
+                if (nowtime[0] > deadline[0]) {
+                    throw err;
+                }
+                return this._waitForAttachmentDeadline(token, deadline)
+            }
+            throw err;
+        });
+    }
+
     waitAndDebug(token, timeout = 60) {
         this.stopWaiting = false;
         this.waiter.showWaiting();
@@ -365,7 +549,7 @@ class SquashExtention {
         });
     }
 
-    _debugContainer(imageid, pod, container) {
+    _debugContainer(imageid, pod, container): Promise<any> {
         return this.requestAttachment(imageid, pod, container).then(
             (token) => {
                 if (token) {
@@ -447,194 +631,15 @@ class SquashExtention {
 
     requestAttachment(imgid, pod, container): Promise<string> {
         console.log(`requestAttachment ${imgid}, ${pod}, ${container}`);
-
-        return dbgclient(`app attach ${imgid} ${pod} ${container} dlv`).then((res) => {
-            return res["id"];
-        });
-    }
-    waitForAttachment(token, timeout): Promise<any> {
-        let deadline = process.hrtime();
-        deadline[0] += timeout;
-        return this._waitForAttachmentDeadline(token, deadline)
-    }
-
-    _waitForAttachmentDeadline(token, deadline): Promise<any> {
-        if (this.stopWaiting) {
-            return Promise.resolve(null)
-        }
-
-        let waitcmd = `session  wait ${token}`;
-
-        return dbgclient(waitcmd).then((res) => {
-            console.log(`Wait returned: ${res}`)
-            return res;
-        }).catch((err) => {
-            let errinfojson = JSON.parse(err.stderr);
-            if (errinfojson["Type"] == "Timeout") {
-                let nowtime = process.hrtime();
-                if (nowtime[0] > deadline[0]) {
-                    throw err;
+        return new Promise((resolve, reject) => {
+            this.chooseDebugger().then((dbgr) => {
+                if (dbgr) {
+                    dbgclient(`app attach ${imgid} ${pod} ${container} ${dbgr} `).then((res) => {
+                        return resolve(res["id"]);
+                    });
                 }
-                return this._waitForAttachmentDeadline(token, deadline)
-            }
-            throw err;
+            });
         });
-    }
-
-}
-
-
-const handleError = (err) => {
-    if (err) {
-        vscode.window.showErrorMessage(err.message);
-    }
-};
-
-
-class WaitWidget {
-
-    private _statusBarItem: vscode.StatusBarItem;
-
-    public showWaiting() {
-
-        // Create as needed
-        if (!this._statusBarItem) {
-            this._statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
-            this._statusBarItem.text = "⏱️ Waiting for Squash session"
-            this._statusBarItem.command = "vs-squash.stopWaitForServiceSession"
-        }
-
-        this._statusBarItem.show();
-    }
-
-    public hideWaiting() {
-        this._statusBarItem.hide();
-    }
-
-    dispose() {
-        this._statusBarItem.dispose();
-    }
-}
-
-
-function kubectl_get(cmd: string, ...args: string[]): Promise<any> {
-    return kubectl("get -o json " + cmd + " " + args.join(" ")).then(JSON.parse);
-}
-
-function kubectl(cmd): Promise<any> {
-    return exec(get_conf_or("kubectl-path", "kubectl") + " " + cmd);
-}
-
-
-function get_conf_or(k, d) {
-    let config = vscode.workspace.getConfiguration('vs-squash');
-    let v = config[k];
-    if (!v) {
-        return d;
-    }
-    return v;
-}
-
-function get_kubectl_proxy_options(): any {
-
-
-    let proxy = get_conf_or("kubectl-proxy", "");
-    if (proxy) {
-        return { env: { http_proxy: proxy } }
-    }
-    return null
-}
-
-function kubectl_portforward(remote): Promise<number> {
-    let remoteparts = remote.split(":");
-    if (remoteparts.length != 2) {
-        throw new Error('Invalid remote');
-    }
-    let pod = remoteparts[0];
-    let podport = remoteparts[1];
-
-    let cmd = get_conf_or("kubectl-path", "kubectl") + " port-forward " + ` ${pod} :${podport}`;
-    console.log("Executing: " + cmd);
-    let p = new Promise<number>((resolve, reject) => {
-        let resolved = false;
-        let handler = function (code, stdout, stderr) {
-            if (resolved != true) {
-                if (code !== 0) {
-                    reject(new ExecError(code, stderr));
-                } else {
-                    reject(new Error("Didn't receive port"));
-                }
-            } else {
-                console.log(`port forward ended unexpectly: ${code} ${stdout} ${stderr}`)
-            }
-        };
-        let child = shelljs.exec(cmd, get_kubectl_proxy_options(), handler);
-        let stdout = "";
-        child.stdout.on('data', function (data) {
-            stdout += data;
-            let portRegexp = /from\s+.+:(\d+)\s+->/g;
-            let match = portRegexp.exec(stdout);
-            if (!match != null) {
-                resolved = true;
-                resolve(parseInt(match[1]))
-            }
-        });
-    });
-
-    return p;
-}
-
-function dbgclient(cmd): Promise<any> {
-    let url = get_conf_or("dbgserver-url", "");
-
-    if (url) {
-        url = " --url=" + url
-    }
-
-    return exec(get_conf_or("dbgclient-path", "dbgclient") + url + " --json=true " + cmd).then(JSON.parse);
-}
-
-function exec(cmd): Promise<any> {
-    console.log("Executing: " + cmd);
-    let promise = new Promise((resolve, reject) => {
-        let handler = function (code, stdout, stderr) {
-            if (code !== 0) {
-                reject(new ExecError(code, stderr));
-            } else {
-                resolve(stdout);
-            }
-        };
-
-        let options = { async: true };
-        let child = shelljs.exec(cmd, options, handler);
-
-    });
-
-
-    return promise;
-}
-
-// https://github.com/Microsoft/TypeScript/wiki/Breaking-Changes#extending-built-ins-like-error-array-and-map-may-no-longer-work
-class ExecError extends Error {
-    code: number;
-    stderr: string;
-
-    constructor(code: number, stderr: string) {
-        super(stderr.trim());
-
-        // Set the prototype explicitly.
-        Object.setPrototypeOf(this, ExecError.prototype);
-
-        this.code = code;
-        this.stderr = stderr;
-    }
-
-    getCode() {
-        return this.code;
-    }
-
-    getStderr() {
-        return this.stderr;
     }
 
 }
