@@ -5,7 +5,6 @@
   <br>
   VS Code - Squash debugger for microservices
 </h1>
-<BR>
 
 
 <h4 align="center">Debug your microservices application running in container orchestration from VS Code.</h4>
