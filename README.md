@@ -199,23 +199,23 @@ if you have the kubernets vscode extention, you run the command "Kubernetes Crea
 
 ## Debug
 In VS Code, issue the command "Squash: Attach to container":
-![Attach to container](images/1-attach-to-container.png "Attach to container")
+![Choose Command](images/choose-command.png "Choose Command")
 
 Select your pod:
-![Select pod](images/2-select-pod.png "Select pod")
+![Select Pod](images/choose-pod.png "Select pod")
 
 Select your container:
-![Select container](images/3-select-container.png "Select container")
+![Select Container](images/choose-container.png "Select Container")
  
 Select the debugger:
-![Select debugger](images/4-select-debugger.png "Select debugger")
+![Select Debugger](images/choose-debugger.png "Select Debugger")
  
 Wait for the session to connect:
-![Wait session](images/5-waiting-for-session.png "Wait session")
+![Wait session](images/debug-indication.png "Wait session")
  
 Once the debug session was established, you will see an inormational message about it:
-![Session connected](images/6-session-connected.png "Session connected")
+![Session connected](images/debug-wait-event.png "Session connected")
  
 You can now start debugging:
-![live debugging](images/7-debugging.png "live debugging")
+![live debugging](images/live-debug.png "live debugging")
 
