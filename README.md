@@ -8,7 +8,7 @@
 
 
 <h4 align="center">Debug your microservices application running in container orchestration from VS Code.</h4>
-<BR>
+<BR><BR>
 
 **Supported features:**
 * Debug container in a pod
