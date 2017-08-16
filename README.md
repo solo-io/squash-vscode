@@ -32,7 +32,7 @@ Table of Contents
 
 ## Prerequisites
 - A kubernetes cluster with [kubectl configured](https://kubernetes.io/docs/tasks/tools/install-kubectl/#configure-kubectl).
-- Go extention installed, with the dlv debugger configured. (ADD LINK TO DLV CONFIG HERE)
+- Go extention installed, with the dlv debugger [configured](https://github.com/Microsoft/vscode-go/wiki/Debugging-Go-code-using-VS-Code#set-up-configurations-in-launchjson).
 - Squash command line binary installed.
 - Squash vs-code extention should be [installed and configured](#configure-the-vscode-extension).
 - Docker repository that you can push images to, and that kubernetes can access (docker hub for example)
