@@ -24,11 +24,11 @@
 
 Table of Contents
 
-[Prerequisites](#Prerequisites)<BR>
-[Configuration](#Configuration)<BR>
-[Build](#Build)<BR>
-[Deploy](#Deploy)<BR>
-[Debug](#Debug)<BR>
+[Prerequisites](#prerequisites)<BR>
+[Configuration](#configuration)<BR>
+[Build](#build)<BR>
+[Deploy](#deploy)<BR>
+[Debug](#debug)<BR>
 
 ## Prerequisites
 - A kubernetes cluster with [kubectl configured](https://kubernetes.io/docs/tasks/tools/install-kubectl/#configure-kubectl).
@@ -36,19 +36,20 @@ Table of Contents
 - Squash command line binary installed.
 - Squash vs-code extention should be [installed and configured](#configure-the-vscode-extension).
 - Docker repository that you can push images to, and that kubernetes can access (docker hub for example)
-## Before starting
+#### Before starting
 - Make sure you have access to the squash server - use `$ squash app list` to test that it is working properly.
 - Make sure kubectl port-foward functionality works.
 
 If you have an issue with either, see the [FAQ for help](faq.md).
 
-## Configure the vscode extension
+## Configuration
+#### Configure the vscode extension
 blah blah blah blah blah blahblah blah blahblah blah blahblah blah blahblah blah blahblah blah blahblah blah blah
 add debugclient binary
 
 ## Build
-## Build your microservice
-### Create a new go project
+#### Build your microservice
+##### Create a new go project
 Open VS Code. In a new project folder, create a new `main.go` file. Here's the one we will be using in this tutorial:
 ```
 package main
@@ -97,7 +98,7 @@ Test that the go debugger is properly configured, by starting a local debug sess
 
 Once the debug session has started properly, not further step is needed, and you can stop the debugger.
 
-### Build a docker container
+#### Build a docker container
 In the same folder as the `main.go` add a `Dockerfile`:
 ```
 FROM alpine
@@ -149,7 +150,7 @@ task docker-push
 To build and push the microservice.
 
 ## Deploy
-## Deploy the microservice to kubernetes.
+#### Deploy the microservice to kubernetes.
 
 Create a manifest for kubernetes named `microservice.yml`: 
 ```
@@ -194,7 +195,7 @@ $ kubectl create -f microservice.yml
 if you have the kubernets vscode extention, you run the command "Kubernetes Create" while the manifest file is open.
 
 ## Debug
-## Debug time!
+#### Debug time!
 In VS Code, issue the command "Squash: Attach to container":
 ![Attach to container](images/1-attach-to-container.png "Attach to container")
 
