@@ -1,9 +1,11 @@
 {
-    "name": "vscode-squash",
-    "displayName": "vscode-squash",
-    "description": "Debug via the squash distributed debugger",
+    "name": "squash-vscode",
+    "displayName": "Squash",
+    "description": "Debug microservices with Squash",
     "version": "0.1.0",
-    "publisher": "f",
+    "publisher": "solo.io",
+    "icon": "images/squash-icon.png",
+    "license": "SEE LICENSE IN LICENSE.txt",
     "engines": {
         "vscode": "^1.12.0"
     },
@@ -46,19 +48,19 @@
         "commands": [
             {
                 "command": "vs-squash.startServiceWatch",
-                "title": "Squash: Instruct the Squash server to start watching a service for debug events"
+                "title": "Squash: debug service"
             },
             {
                 "command": "vs-squash.waitForServiceSession",
-                "title": "Squash: Resume waiting for a debug event on a service"
+                "title": "Squash: resume debug service"
             },
             {
                 "command": "vs-squash.attachToPod",
-                "title": "Squash: Attach to a container"
+                "title": "Squash: debug container"
             },
             {
                 "command": "vs-squash.stopWaitForServiceSession",
-                "title": "Squash: Stop waiting for a debug event on a service"
+                "title": "Squash: stop debug service"
             }
         ]
     },
