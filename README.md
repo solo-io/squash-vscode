@@ -43,13 +43,13 @@ Table of Contents
 If you have an issue with either, see the [FAQ for help](faq.md).
 
 ## Configuration
-#### Configure the vscode extension
+Configure the vscode extension
 blah blah blah blah blah blahblah blah blahblah blah blahblah blah blahblah blah blahblah blah blahblah blah blah
 add debugclient binary
 
 ## Build
-#### Build your microservice
-##### Create a new go project
+Build your microservice
+#### Create a new go project
 Open VS Code. In a new project folder, create a new `main.go` file. Here's the one we will be using in this tutorial:
 ```
 package main
@@ -150,7 +150,7 @@ task docker-push
 To build and push the microservice.
 
 ## Deploy
-#### Deploy the microservice to kubernetes.
+Deploy the microservice to kubernetes.
 
 Create a manifest for kubernetes named `microservice.yml`: 
 ```
@@ -195,7 +195,6 @@ $ kubectl create -f microservice.yml
 if you have the kubernets vscode extention, you run the command "Kubernetes Create" while the manifest file is open.
 
 ## Debug
-#### Debug time!
 In VS Code, issue the command "Squash: Attach to container":
 ![Attach to container](images/1-attach-to-container.png "Attach to container")
 
