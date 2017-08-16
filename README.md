@@ -40,7 +40,7 @@ Table of Contents
 - Make sure you have access to the squash server - use `$ squash app list` to test that it is working properly.
 - Make sure kubectl port-foward functionality works.
 
-If you have an issue with either, see the [FAQ for help](faq.md).
+If you have an issue with either, see the [FAQ for help](https://github.com/solo-io/squash-initial/blob/master/docs/faq.md).
 
 ## Configuration
 Configure the vscode extension
