@@ -211,10 +211,13 @@ Select the debugger:
 ![Select Debugger](images/choose-debugger.png "Select Debugger")
  
 Wait for the session to connect:
-![Wait session](images/debug-indication.png "Wait session")
+![Wait session](images/debug-wait.png "Wait session")
  
 Once the debug session was established, you will see an inormational message about it:
-![Session connected](images/debug-wait-event.png "Session connected")
+![Session connected](images/debug-indication.png "Session connected")
+ 
+Wait for a debug event:
+![Wait Debug Event](images/debug-wait-event.png "Wait Debug Event")
  
 You can now start debugging:
 ![live debugging](images/live-debug.png "live debugging")
