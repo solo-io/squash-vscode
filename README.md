@@ -50,7 +50,8 @@ add debugclient binary
 ## Build
 Build your microservice
 #### 1. Create a new go project
-Open VS Code. In a new project folder, create a new `main.go` file. Here's the one we will be using in this tutorial:
+Open VS Code. In a new project folder, create a new `main.go` file. 
+Here's the one we will be using in this tutorial:
 ```
 package main
 
@@ -108,7 +109,8 @@ ENTRYPOINT ["/microservice"]
 EXPOSE 8080
 ```
 
-To build everything conviently, you can configure  VSCode's Task runner. Here's an example for tasks.json ` (replace  <YOUR REPO HERE> with the appropreate value):
+To build everything conviently, you can configure VSCode's Task runner. 
+Here's an example for tasks.json ` (replace  <YOUR REPO HERE> with the appropreate value):
 ```
 {
     "version": "2.0.0",
@@ -138,7 +140,8 @@ To build everything conviently, you can configure  VSCode's Task runner. Here's 
     ]
 }
 ```
-CGo is disabled as it is not compatible with the alpine image. the gcflags part adds more debug information for the debugger.
+CGo is disabled as it is not compatible with the alpine image. 
+the gcflags part adds more debug information for the debugger.
 
 Then execute, via vscode's command pallet:
 ```
@@ -199,7 +202,6 @@ In VS Code, issue the command "Squash: Attach to container":
 ![Attach to container](images/1-attach-to-container.png "Attach to container")
 
 Select your pod:
-
 ![Select pod](images/2-select-pod.png "Select pod")
 
 Select your container:
