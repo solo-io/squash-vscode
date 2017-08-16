@@ -49,7 +49,7 @@ add debugclient binary
 
 ## Build
 Build your microservice
-#### Create a new go project
+#### 1. Create a new go project
 Open VS Code. In a new project folder, create a new `main.go` file. Here's the one we will be using in this tutorial:
 ```
 package main
@@ -98,7 +98,7 @@ Test that the go debugger is properly configured, by starting a local debug sess
 
 Once the debug session has started properly, not further step is needed, and you can stop the debugger.
 
-#### Build a docker container
+#### 2. Build a docker container
 In the same folder as the `main.go` add a `Dockerfile`:
 ```
 FROM alpine
