@@ -23,7 +23,7 @@
         "type": "git",
         "url": "https://github.com/solo-io/squash-vscode.git"
       },
-    "license": "SEE LICENSE IN LICENSE.txt",
+    "license": "SEE LICENSE IN LICENSE.md",
     "engines": {
         "vscode": "^1.12.0"
     },
@@ -40,7 +40,7 @@
     "main": "./out/src/extension",
     "contributes": {
         "configuration": {
-            "title": "squash config",
+            "title": "Squash Configuration",
             "properties": {
                 "vs-squash.kubectl-path": {
                     "type": "string",
