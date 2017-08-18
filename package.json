@@ -1,15 +1,34 @@
 {
-    "name": "squash-vscode",
+    "name": "squash",
     "displayName": "Squash",
     "description": "Debug microservices with Squash",
     "version": "0.1.0",
-    "publisher": "solo.io",
+    "publisher": "ilevine",
+    "author": {
+        "name": "solo.io"
+      },
     "icon": "images/squash-icon.png",
+    "galleryBanner": {
+        "color": "#4a4a4a",
+        "theme": "dark"
+    },
+    "keywords": [
+        "docker",
+        "debugger",
+        "container",
+        "microservices",
+        "kubernetes"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/solo-io/squash-vscode.git"
+      },
     "license": "SEE LICENSE IN LICENSE.txt",
     "engines": {
         "vscode": "^1.12.0"
     },
     "categories": [
+        "Debuggers",
         "Other"
     ],
     "activationEvents": [
@@ -48,19 +67,19 @@
         "commands": [
             {
                 "command": "vs-squash.startServiceWatch",
-                "title": "Squash: debug service"
+                "title": "Squash: Debug service"
             },
             {
                 "command": "vs-squash.waitForServiceSession",
-                "title": "Squash: resume debug service"
+                "title": "Squash: Resume debug service"
             },
             {
                 "command": "vs-squash.attachToPod",
-                "title": "Squash: debug container"
+                "title": "Squash: Debug container"
             },
             {
                 "command": "vs-squash.stopWaitForServiceSession",
-                "title": "Squash: stop debug service"
+                "title": "Squash: Stop debug service"
             }
         ]
     },
