@@ -35,7 +35,8 @@
         "onCommand:vs-squash.attachToPod",
         "onCommand:vs-squash.startServiceWatch",
         "onCommand:vs-squash.waitForServiceSession",
-        "onCommand:vs-squash.stopWaitForServiceSession"
+        "onCommand:vs-squash.stopWaitForServiceSession",
+        "onCommand:vs-squash.toggleCloudBreakpoint"
     ],
     "main": "./out/src/extension",
     "contributes": {
@@ -80,6 +81,10 @@
             {
                 "command": "vs-squash.stopWaitForServiceSession",
                 "title": "Squash: Stop debug service"
+            },
+            {
+                "command": "vs-squash.toggleCloudBreakpoint",
+                "title": "Squash: Toggle cloud breakpoint"
             }
         ]
     },

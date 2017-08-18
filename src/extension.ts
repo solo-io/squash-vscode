@@ -4,6 +4,7 @@
 import * as vscode from 'vscode';
 import * as shelljs from 'shelljs';
 import * as pickitems from './pickitems';
+import {CloudPoints} from './cloudpoints';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -16,12 +17,13 @@ export function activate(context: vscode.ExtensionContext) {
     // The command has been defined in the package.json file
     // Now provide the implementation of the command with  registerCommand
     // The commandId parameter must match the command field in package.json
-    let se = new SquashExtention();
+    let se = new SquashExtention(context);
     const subscriptions = [
         vscode.commands.registerCommand('vs-squash.attachToPod', () => { se.attachToPod(); }),
         vscode.commands.registerCommand('vs-squash.startServiceWatch', () => { se.startServiceWatch(); }),
         vscode.commands.registerCommand('vs-squash.waitForServiceSession', () => { se.waitForServiceSession(); }),
-        vscode.commands.registerCommand('vs-squash.stopWaitForServiceSession', () => { se.stopWaitForServiceSession(); })
+        vscode.commands.registerCommand('vs-squash.stopWaitForServiceSession', () => { se.stopWaitForServiceSession(); }),
+        vscode.commands.registerCommand('vs-squash.toggleCloudBreakpoint', () => { se.cloudPoints.toggle(); })
     ];
 
     subscriptions.forEach((element) => {
@@ -193,10 +195,12 @@ class SquashExtention {
 
     waiter: WaitWidget;
     stopWaiting: boolean;
+    cloudPoints : CloudPoints;
 
-    constructor() {
+    constructor(context: vscode.ExtensionContext) {
         this.waiter = new WaitWidget();
         this.stopWaiting = false;
+        this.cloudPoints = new CloudPoints(context);
     }
 
 
@@ -340,8 +344,12 @@ class SquashExtention {
                                 if (img) {
                                     return this.chooseDebugger().then((dbgr) => {
                                         if (dbgr) {
-                                            let servicename = service["metadata"]["name"]
-                                            return squash(`app add "${servicename}" "${img}" "${dbgr}"`);
+                                            let servicename = service["metadata"]["name"];
+                                            let cmd = `app add "${servicename}" "${img}" "${dbgr}"`;
+                                            this.cloudPoints.get_all_locations().forEach((v) => {
+                                                cmd += " --breakpoint="+v
+                                            });
+                                            return squash(cmd);
                                         }
                                     });
                                 }
