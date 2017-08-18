@@ -23,4 +23,4 @@
 ## Demo
 
 ## Examles
-* [debug apps that runs on Kubernetes](docs/example-app-kubernetes.md)
+* [Debug application that runs on Kubernetes](docs/example-app-kubernetes.md)
