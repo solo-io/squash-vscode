@@ -7,7 +7,7 @@
 </h1>
 
 
-<h4 align="center">Debug your microservices application running on container orchestration from VS Code.</h4>
+<h4 align="center">Debug your microservices application from VS Code.</h4>
 <BR><BR>
 
 **Supported features:**
@@ -15,8 +15,7 @@
 * Debug a service
 * Setting breakpoints
 * Stepping through the code
-* View values of varibles
-* Modify variables value
+* View and modify values of variables
 * and more ...
 
 ***
