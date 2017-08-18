@@ -23,7 +23,7 @@
         "type": "git",
         "url": "https://github.com/solo-io/squash-vscode.git"
       },
-    "license": "SEE LICENSE IN LICENSE.txt",
+    "license": "SEE LICENSE IN LICENSE.md",
     "engines": {
         "vscode": "^1.12.0"
     },
@@ -41,7 +41,7 @@
     "main": "./out/src/extension",
     "contributes": {
         "configuration": {
-            "title": "squash config",
+            "title": "Squash Configuration",
             "properties": {
                 "vs-squash.kubectl-path": {
                     "type": "string",
@@ -68,19 +68,19 @@
         "commands": [
             {
                 "command": "vs-squash.startServiceWatch",
-                "title": "Squash: Debug service"
+                "title": "Squash: Debug Service"
             },
             {
                 "command": "vs-squash.waitForServiceSession",
-                "title": "Squash: Resume debug service"
+                "title": "Squash: Resume Debug Service"
             },
             {
                 "command": "vs-squash.attachToPod",
-                "title": "Squash: Debug container"
+                "title": "Squash: Debug Container"
             },
             {
                 "command": "vs-squash.stopWaitForServiceSession",
-                "title": "Squash: Stop debug service"
+                "title": "Squash: Stop Debug Service"
             },
             {
                 "command": "vs-squash.toggleCloudBreakpoint",
