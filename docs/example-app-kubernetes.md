@@ -41,7 +41,8 @@ Squash Configuration:
   "vs-squash.squash-server-url": null,
   
 ```
-add debugclient binary
+
+## add debugclient binary
 
 ## Build
 Build your microservice
