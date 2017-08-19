@@ -554,7 +554,8 @@ class SquashExtention {
                                 program: "${workspaceRoot}",
                                 env: {},
                                 args: [],
-                                showLog: true
+                                showLog: true,
+                                trace: "verbose"
                             };
                         } else {
                             debuggerconfig = {
