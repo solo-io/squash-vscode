@@ -42,8 +42,6 @@ Squash Configuration:
   
 ```
 
-## add debugclient binary
-
 ## Build
 Build your microservice
 #### 1. Create a new go project
