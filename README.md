@@ -16,14 +16,14 @@
 Squash, a tool for debugging distributed applications, is designed to bring the strength of modern debuggers and the convenience of their IDEs to microservices developers. Squash uses popular, powerful and mature debuggers, and integrates them seamlessly with leading cluster managers/paas. This allows devs to use the debugger of their choice, and the IDEs that support it, to debug microservices on any platform.
 
 ## What is squash extention ?
-Squash uses Visual Studio Code as its user interface. 
-After installing the Squash extension for vs code, Squash commands are available in vs code command palette. 
+The Squash VS Code extenstion allows Squash to use Visual Studio Code as its user interface. 
+After installing this extension Squash commands are available in VS Code command palette. 
 
 ## Supported features:
 * Debug container in a pod
 * Debug a service
-* Setting breakpoints
-* Stepping through the code
+* Set breakpoints
+* Step through the code
 * View and modify values of variables
 * and more ...
 
