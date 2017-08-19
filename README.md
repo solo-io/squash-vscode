@@ -20,6 +20,7 @@ The Squash VS Code extenstion allows Squash to use Visual Studio Code as its use
 After installing this extension Squash commands are available in VS Code command palette. 
 
 ## Supported features:
+* Live debugging cross multi microservices
 * Debug container in a pod
 * Debug a service
 * Set breakpoints
