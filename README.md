@@ -17,7 +17,7 @@ Squash, a tool for debugging distributed applications, is designed to bring the 
 Squash uses Visual Studio Code as its user interface. 
 After installing the Squash extension for vs code, Squash commands are available in vs code command palette. 
 
-**Supported features:**
+## Supported features:
 * Debug container in a pod
 * Debug a service
 * Setting breakpoints
