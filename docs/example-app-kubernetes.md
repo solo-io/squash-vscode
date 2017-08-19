@@ -19,7 +19,7 @@ Table of Contents
 
 #### Before starting
 - Make sure kubectl port-foward functionality works.
-- Make sure you have access to the squash server - use `$ squash app list` to test that it is working properly.
+- Make sure you have access to the squash server - use `$ squash --url=http://SQUASH-SERVER-ADDRESS app list` to test that it is working properly.
 
 If you have an issue with either, see the [FAQ for help](https://github.com/solo-io/squash-initial/blob/master/docs/faq.md).
 
@@ -29,13 +29,13 @@ Configure the vscode extension:
 ```
 Squash Configuration:
 
-  // File path to a kubectl binary.
+  // File path to a kubectl binary. Not needed if in Path
   "vs-squash.kubectl-path": null,
 
-  // HTTP proxy for kubectl port-forward.
+  // HTTP proxy for kubectl port-forward. Not needed if it works properly.
   "vs-squash.kubectl-proxy": null,
 
-  // File path to a squash command line binary.
+  // File path to a squash command line binary. Not needed if in Path
   "vs-squash.squash-path": null,
 
   // The API endpoint of the squash server.
@@ -90,7 +90,7 @@ func calchandler(w http.ResponseWriter, r *http.Request) {
 ```
 
 Test that the go debugger is properly configured, by starting a local debug session:
-- Either hit F5
+- Either hit F5, Or
 - Issue the command "Debug: Start Debugging" command
 
 Once the debug session has started properly, not further step is needed, and you can stop the debugger.
@@ -106,7 +106,7 @@ EXPOSE 8080
 ```
 
 To build everything conviently, you can configure VSCode's Task runner. 
-Here's an example for tasks.json ` (replace  <YOUR REPO HERE> with the appropreate value):
+Here's an example for tasks.json (replace  <YOUR REPO HERE> with the appropreate value):
 ```
 {
     "version": "2.0.0",
@@ -191,7 +191,7 @@ And deploy it to kubernets:
 $ kubectl create -f microservice.yml
 ```
 
-if you have the kubernets vscode extention, you run the command "Kubernetes Create" while the manifest file is open.
+If you have the kubernetes vscode extention, you can run the command "Kubernetes Create" while the manifest file is open.
 
 ## Debug
 In VS Code, issue the command "Squash: Attach to container":
