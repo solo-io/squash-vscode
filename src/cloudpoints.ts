@@ -39,7 +39,7 @@ export class CloudPoints {
     }
 
     get_sorted_bp(): number[] {
-        let arr: number[] = Array.from(this.breakpoints[this.get_current_file()]);
+        let arr: number[] = Array.from(this.breakpoints.get(this.get_current_file()));
         arr.sort();
         return arr
     }
@@ -59,11 +59,11 @@ export class CloudPoints {
 
     toggle_bp(line: number) {
         let f = this.get_current_file();
-        if (! this.breakpoints[f]) {
-            this.breakpoints[f] = new Set<number>();
+        if (! this.breakpoints.has(f)) {
+            this.breakpoints.set(f, new Set<number>());
         }
 
-        let numbers: Set<number> = this.breakpoints[f];
+        let numbers: Set<number> = this.breakpoints.get(f);
         if (numbers.has(line)) {
             numbers.delete(line);
         } else {
