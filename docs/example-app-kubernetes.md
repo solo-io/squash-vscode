@@ -23,8 +23,24 @@ Table of Contents
 If you have an issue with either, see the [FAQ for help](https://github.com/solo-io/squash-initial/blob/master/docs/faq.md).
 
 ## Configuration
-Configure the vscode extension
-blah blah blah blah blah blahblah blah blahblah blah blahblah blah blahblah blah blahblah blah blahblah blah blah
+Configure the vscode extension:
+
+```
+Squash Configuration:
+
+  // File path to a kubectl binary.
+  "vs-squash.kubectl-path": null,
+
+  // HTTP proxy for kubectl port-forward.
+  "vs-squash.kubectl-proxy": null,
+
+  // File path to a squash command line binary.
+  "vs-squash.squash-path": null,
+
+  // The API endpoint of the squash server.
+  "vs-squash.squash-server-url": null,
+  
+```
 add debugclient binary
 
 ## Build
