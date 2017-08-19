@@ -6,7 +6,7 @@ export class CloudPoints {
 
     constructor(context: vscode.ExtensionContext) {
         this.breakpoints = new Map();
-        let icon = context.asAbsolutePath("assets/cloudpoint.svg");
+        let icon = context.asAbsolutePath("images/squash-breakpoint.svg");
         this.decorationType = vscode.window.createTextEditorDecorationType({
             gutterIconPath: icon,
             overviewRulerLane: vscode.OverviewRulerLane.Full,

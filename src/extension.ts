@@ -21,6 +21,7 @@ export function activate(context: vscode.ExtensionContext) {
     const subscriptions = [
         vscode.commands.registerCommand('vs-squash.attachToPod', () => { se.attachToPod(); }),
         vscode.commands.registerCommand('vs-squash.startServiceWatch', () => { se.startServiceWatch(); }),
+        vscode.commands.registerCommand('vs-squash.stopServiceWatch', () => { se.stopServiceWatch(); }),
         vscode.commands.registerCommand('vs-squash.waitForServiceSession', () => { se.waitForServiceSession(); }),
         vscode.commands.registerCommand('vs-squash.stopWaitForServiceSession', () => { se.stopWaitForServiceSession(); }),
         vscode.commands.registerCommand('vs-squash.toggleCloudBreakpoint', () => { se.cloudPoints.toggle(); })
@@ -175,7 +176,7 @@ class WaitWidget {
         // Create as needed
         if (!this._statusBarItem) {
             this._statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
-            this._statusBarItem.text = "⏱️ Waiting for Squash session"
+            this._statusBarItem.text = "⏱️ Waiting for Debug Session"
             this._statusBarItem.command = "vs-squash.stopWaitForServiceSession"
         }
 
@@ -364,13 +365,34 @@ class SquashExtention {
             if (dbgconfig) {
                 let id = dbgconfig.id;
                 vscode.window.showInformationMessage('Added debug config id:' + id);
-                return vscode.commands.executeCommand(
-                    'vs-squash.waitForServiceSession',
-                    dbgconfig
-                );
+                return this.waitForServiceSession(dbgconfig);
             }
 
         })
+
+        return promise.catch(handleError);
+    }
+
+    stopServiceWatch() {
+ 
+        let promise = squash(`app list`).then(
+            (dbgconfiglist) => {
+                let dbgItems: pickitems.DbgConfigPickItem[] = [];
+                dbgconfiglist.forEach((dbgconfig) => {
+                    if (dbgconfig["attachment"]["type"] == "service") {
+                        dbgItems.push(new pickitems.DbgConfigPickItem(dbgconfig));
+                    }
+                });
+                return vscode.window.showQuickPick(dbgItems).then((item) => {
+                    if (item) {
+                        let dbgconfigid = item.dbgconfig["id"];
+                        return squash(`app delete "${dbgconfigid}"`);
+                    }
+                });
+
+
+            }
+        );
 
         return promise.catch(handleError);
     }

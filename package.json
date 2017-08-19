@@ -34,6 +34,7 @@
     "activationEvents": [
         "onCommand:vs-squash.attachToPod",
         "onCommand:vs-squash.startServiceWatch",
+        "onCommand:vs-squash.stopServiceWatch",        
         "onCommand:vs-squash.waitForServiceSession",
         "onCommand:vs-squash.stopWaitForServiceSession",
         "onCommand:vs-squash.toggleCloudBreakpoint"
@@ -46,17 +47,17 @@
                 "vs-squash.kubectl-path": {
                     "type": "string",
                     "default": null,
-                    "description": "File path to a kubectl binary."
+                    "description": "File path to a kubectl binary. [Optional]"
                 },
                 "vs-squash.kubectl-proxy": {
                     "type": "string",
                     "default": null,
-                    "description": "HTTP proxy for kubectl port-forward."
+                    "description": "HTTP proxy for kubectl port-forward. [Optional]"
                 },
                 "vs-squash.squash-path": {
                     "type": "string",
                     "default": null,
-                    "description": "File path to a squash command line binary."
+                    "description": "File path to a squash command line binary. [Optional]"
                 },
                 "vs-squash.squash-server-url": {
                     "type": "string",
@@ -72,7 +73,7 @@
             },
             {
                 "command": "vs-squash.waitForServiceSession",
-                "title": "Squash: Resume Debug Service"
+                "title": "Squash: Resume Debug Session"
             },
             {
                 "command": "vs-squash.attachToPod",
@@ -80,11 +81,15 @@
             },
             {
                 "command": "vs-squash.stopWaitForServiceSession",
+                "title": "Squash: Release Debug Session"
+            },
+            {
+                "command": "vs-squash.stopServiceWatch",
                 "title": "Squash: Stop Debug Service"
             },
             {
                 "command": "vs-squash.toggleCloudBreakpoint",
-                "title": "Squash: Toggle cloud breakpoint"
+                "title": "Squash: Toggle Squash Breakpoint"
             }
         ]
     },
