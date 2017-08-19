@@ -3,7 +3,9 @@
 <h1 align="center">
     <img src="https://i.imgur.com/pRMwGOj.png" alt="squash" width="100" height="118">
   <br>
-  VS Code - Squash debugger for microservices
+ Squash: debugger for microservices
+ <br>
+  VS Code extension
 </h1>
 
 
