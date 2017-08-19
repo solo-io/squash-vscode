@@ -139,7 +139,7 @@ Here's an example for tasks.json ` (replace  <YOUR REPO HERE> with the approprea
 CGo is disabled as it is not compatible with the alpine image. 
 the gcflags part adds more debug information for the debugger.
 
-Then execute, via vscode's command pallet:
+Then execute, via vscode's command pallete:
 ```
 task build
 task docker-build
