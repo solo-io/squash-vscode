@@ -63,6 +63,11 @@
                     "type": "string",
                     "default": null,
                     "description": "The API endpoint of the squash server."
+                },
+                "vs-squash.remotePath": {
+                    "type": "string",
+                    "default": null,
+                    "description": "The path of the sources in side the container for path substitution."
                 }
             }
         },

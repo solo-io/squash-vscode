@@ -269,9 +269,11 @@ class SquashExtention {
             }
         });
     }
-    chooseDebugger(): Thenable<string> {
+    chooseDebugger(): Promise<string> {
         let debuggers = ["gdb", "dlv"]
-        return vscode.window.showQuickPick(debuggers);
+        return new Promise((resolve, reject) => {
+            vscode.window.showQuickPick(debuggers).then((v)=>{resolve(v);});
+        });
     }
 
 
@@ -541,7 +543,8 @@ class SquashExtention {
                     (number) => {
                         console.log("Local port forward for debug server is: localhost:" + number);
                         vscode.window.showInformationMessage('Starting debug session' + remote);
-
+                        let remotepath = get_conf_or("vs-squash.remotePath", null);
+                        let localpath = vscode.workspace.rootPath;
                         let debuggerconfig;
                         if (dbgconfig["debugger"] == "dlv") {
                             debuggerconfig = {
@@ -552,6 +555,7 @@ class SquashExtention {
                                 port: number,
                                 host: "127.0.0.1",
                                 program: "${workspaceRoot}",
+                                remotepath: remotepath,
                                 env: {},
                                 args: [],
                                 showLog: true
@@ -563,7 +567,8 @@ class SquashExtention {
                                 name: "Attach to gdbserver",
                                 target: "localhost:" + number,
                                 remote: true,
-                                cwd: vscode.workspace.rootPath
+                                autorun: [`set substitute-path ${remotepath} ${localpath}`]
+                                
                             };
                         }
 
@@ -663,9 +668,9 @@ class SquashExtention {
     requestAttachment(imgid, pod, container): Promise<string> {
         console.log(`requestAttachment ${imgid}, ${pod}, ${container}`);
         return new Promise((resolve, reject) => {
-            this.chooseDebugger().then((dbgr) => {
+            return this.chooseDebugger().then((dbgr) => {
                 if (dbgr) {
-                    squash(`debugconfig addcontainer ${imgid} ${pod} ${container} ${dbgr} `).then((res) => {
+                    return squash(`debugconfig addcontainer ${imgid} ${pod} ${container} ${dbgr} `).then((res) => {
                         return resolve(res["id"]);
                     });
                 }
