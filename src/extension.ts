@@ -558,7 +558,8 @@ class SquashExtention {
                                 remotepath: remotepath,
                                 env: {},
                                 args: [],
-                                showLog: true
+                                showLog: true,
+                                trace: "verbose"
                             };
                         } else {
                             debuggerconfig = {
