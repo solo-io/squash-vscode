@@ -82,7 +82,7 @@
                 "vs-squash.remotePath": {
                     "type": "string",
                     "default": null,
-                    "description": "The path of the sources in side the container for path substitution."
+                    "description": "The path of the sources in side the container for path substitution (workspace settings, usually)."
                 }
             }
         },

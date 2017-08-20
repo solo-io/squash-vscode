@@ -543,7 +543,7 @@ class SquashExtention {
                     (number) => {
                         console.log("Local port forward for debug server is: localhost:" + number);
                         vscode.window.showInformationMessage('Starting debug session' + remote);
-                        let remotepath = get_conf_or("vs-squash.remotePath", null);
+                        let remotepath = get_conf_or("remotePath", null);
                         let localpath = vscode.workspace.rootPath;
                         let debuggerconfig;
                         if (dbgconfig["debugger"] == "dlv") {
@@ -554,22 +554,25 @@ class SquashExtention {
                                 mode: "remote",
                                 port: number,
                                 host: "127.0.0.1",
-                                program: "${workspaceRoot}",
-                                remotepath: remotepath,
+                                program:  localpath,
+                                remotePath: remotepath,
                                 env: {},
                                 args: [],
                                 showLog: true,
                                 trace: "verbose"
                             };
                         } else {
+                            let autorun : string[] = null;
+                            if (remotepath) {
+                                autorun = [`set substitute-path ${remotepath} ${localpath}`];
+                            }
                             debuggerconfig = {
                                 type: "gdb",
                                 request: "attach",
                                 name: "Attach to gdbserver",
                                 target: "localhost:" + number,
                                 remote: true,
-                                autorun: [`set substitute-path ${remotepath} ${localpath}`]
-                                
+                                autorun: autorun
                             };
                         }
 
