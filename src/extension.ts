@@ -196,6 +196,7 @@ class SquashExtention {
 
     waiter: WaitWidget;
     stopWaiting: boolean;
+    waitingFor: string;
     cloudPoints : CloudPoints;
 
     constructor(context: vscode.ExtensionContext) {
@@ -388,6 +389,10 @@ class SquashExtention {
                 return vscode.window.showQuickPick(dbgItems).then((item) => {
                     if (item) {
                         let dbgconfigid = item.dbgconfig["id"];
+                        if ((this.stopWaiting == false) && (this.waitingFor == dbgconfigid)) {
+                            this.cancelWaiting();
+                        }
+
                         return squash(`debugconfig delete "${dbgconfigid}"`);
                     }
                 });
@@ -490,18 +495,18 @@ class SquashExtention {
         this.waiter.hideWaiting();
     }
 
-    waitForAttachment(token, timeout): Promise<any> {
+    waitForAttachment(dbgconfigid, timeout): Promise<any> {
         let deadline = process.hrtime();
         deadline[0] += timeout;
-        return this._waitForAttachmentDeadline(token, deadline)
+        return this._waitForAttachmentDeadline(dbgconfigid, deadline)
     }
 
-    _waitForAttachmentDeadline(token, deadline): Promise<any> {
+    _waitForAttachmentDeadline(dbgconfigid, deadline): Promise<any> {
         if (this.stopWaiting) {
             return Promise.resolve(null)
         }
 
-        let waitcmd = `session  wait ${token} `;
+        let waitcmd = `session  wait ${dbgconfigid} `;
 
         return squash(waitcmd).then((res) => {
             console.log(`Wait returned: ${res} `)
@@ -513,16 +518,19 @@ class SquashExtention {
                 if (nowtime[0] > deadline[0]) {
                     throw err;
                 }
-                return this._waitForAttachmentDeadline(token, deadline)
+                return this._waitForAttachmentDeadline(dbgconfigid, deadline)
             }
-            throw err;
+            if (this.stopWaiting == false){
+                throw err;
+            }
         });
     }
 
-    waitAndDebug(token, timeout = 60) {
+    waitAndDebug(dbgconfigid : string, timeout = 60) {
         this.stopWaiting = false;
+        this.waitingFor = dbgconfigid;
         this.waiter.showWaiting();
-        return this.waitForAttachment(token, timeout).then((dbgsession) => {
+        return this.waitForAttachment(dbgconfigid, timeout).then((dbgsession) => {
             if (this.stopWaiting == true) {
                 return;
             }
@@ -532,7 +540,7 @@ class SquashExtention {
             }
             let remote = dbgsession["url"];
             let dbgconfigid = dbgsession["debugConfigId"];
-            console.log(`Attachment waited! dbgconfigid: "${token}";remote: ${remote}`);
+            console.log(`Attachment waited! dbgconfigid: "${dbgconfigid}";remote: ${remote}`);
 
             return squash("debugconfig list " + dbgconfigid).then((dbgconfig) => {
 
@@ -592,12 +600,12 @@ class SquashExtention {
 
     _debugContainer(imageid, pod, container): Promise<any> {
         return this.requestAttachment(imageid, pod, container).then(
-            (token) => {
-                if (token) {
-                    console.log(`requestAttachment token ${token}`);
-                    return this.waitAndDebug(token);
+            (dbgconfigid) => {
+                if (dbgconfigid) {
+                    console.log(`requestAttachment dbgconfigid ${dbgconfigid}`);
+                    return this.waitAndDebug(dbgconfigid);
                 }
-                throw new Error('Attachment token not found');
+                throw new Error('Attachment dbgconfigid not found');
 
             }).catch(handleError);
 
