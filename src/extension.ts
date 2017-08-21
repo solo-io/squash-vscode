@@ -349,7 +349,7 @@ class SquashExtention {
                                     return this.chooseDebugger().then((dbgr) => {
                                         if (dbgr) {
                                             let servicename = service["metadata"]["name"];
-                                            let cmd = `debugconfig addservice "${servicename}" "${img}" "${dbgr}"`;
+                                            let cmd = `addservice "${servicename}" "${img}" "${dbgr}"`;
                                             this.cloudPoints.get_all_locations().forEach((v) => {
                                                 cmd += " --breakpoint="+v
                                             });
@@ -378,7 +378,7 @@ class SquashExtention {
 
     stopServiceWatch() {
  
-        let promise = squash(`debugconfig list`).then(
+        let promise = squash(`list`).then(
             (dbgconfiglist) => {
                 let dbgItems: pickitems.DbgConfigPickItem[] = [];
                 dbgconfiglist.forEach((dbgconfig) => {
@@ -393,7 +393,7 @@ class SquashExtention {
                             this.cancelWaiting();
                         }
 
-                        return squash(`debugconfig delete "${dbgconfigid}"`);
+                        return squash(`delete "${dbgconfigid}"`);
                     }
                 });
 
@@ -420,7 +420,7 @@ class SquashExtention {
             return this.waitAndDebug(dbgconfig.id, 60 * 60);
         }
 
-        let promise = squash(`debugconfig list`).then(
+        let promise = squash(`list`).then(
             (dbgconfiglist) => {
                 let dbgItems: pickitems.DbgConfigPickItem[] = [];
 
@@ -506,7 +506,7 @@ class SquashExtention {
             return Promise.resolve(null)
         }
 
-        let waitcmd = `session  wait ${dbgconfigid} `;
+        let waitcmd = `wait ${dbgconfigid} `;
 
         return squash(waitcmd).then((res) => {
             console.log(`Wait returned: ${res} `)
@@ -542,7 +542,7 @@ class SquashExtention {
             let dbgconfigid = dbgsession["debugConfigId"];
             console.log(`Attachment waited! dbgconfigid: "${dbgconfigid}";remote: ${remote}`);
 
-            return squash("debugconfig list " + dbgconfigid).then((dbgconfig) => {
+            return squash("list " + dbgconfigid).then((dbgconfig) => {
 
                 // TODO: close the forwarder in the end of debugsession.
                 // not sure how to tell when the debug session ends. most chances the pod will
@@ -683,7 +683,7 @@ class SquashExtention {
         return new Promise((resolve, reject) => {
             return this.chooseDebugger().then((dbgr) => {
                 if (dbgr) {
-                    return squash(`debugconfig addcontainer ${imgid} ${pod} ${container} ${dbgr} `).then((res) => {
+                    return squash(`addcontainer ${imgid} ${pod} ${container} ${dbgr} `).then((res) => {
                         return resolve(res["id"]);
                     });
                 }
