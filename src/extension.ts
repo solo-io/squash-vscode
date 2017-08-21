@@ -556,6 +556,7 @@ class SquashExtention {
                                 host: "127.0.0.1",
                                 program:  localpath,
                                 remotePath: remotepath,
+                                stopOnEntry: true,
                                 env: {},
                                 args: [],
                                 showLog: true,
