@@ -1,5 +1,5 @@
 
-# Debug microservices App - Kubernetes 
+# Debug microservices App on Kubernetes using VS Code
 
 Table of Contents
 
