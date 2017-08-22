@@ -195,23 +195,23 @@ If you have the kubernetes vscode extention, you can run the command "Kubernetes
 
 ## Debug
 In VS Code, issue the command "Squash: Debug Container":
-<img src="https://i.imgur.com/HUsnVIk.png" alt="Choose Command" />
+<img src="https://github.com/solo-io/squash-vscode/raw/master/images/choose-command.png" alt="Choose Command" />
 
 Select your pod:
-<img src="https://i.imgur.com/Hwk4d5E.png" alt="Select pod" />
+<img src="https://github.com/solo-io/squash-vscode/raw/master/images/choose-pod.png" alt="Select pod" />
 
 Select your container:
-<img src="https://i.imgur.com/vcSfUWf.png" alt="Select Container" />
+<img src="https://github.com/solo-io/squash-vscode/raw/master/images/choose-container.png" alt="Select Container" />
  
 Select the debugger:
-<img src="https://i.imgur.com/JqLmO1h.png" alt="Select Debugger" />
+<img src="https://github.com/solo-io/squash-vscode/raw/master/images/choose-debugger.png" alt="Select Debugger" />
  
 Once the debug session was established, you will see an inormational message about it:
-<img src="https://i.imgur.com/eDmsNqS.png" alt="Session connected" />
+<img src="https://github.com/solo-io/squash-vscode/raw/master/images/debug-indication.png" alt="Session connected" />
  
 Wait for a debug event:
-<img src="https://i.imgur.com/z43eqWe.png" alt="Wait Debug Event" />
+<img src="https://github.com/solo-io/squash-vscode/raw/master/images/debug-wait-event.png" alt="Wait Debug Event" />
  
 You can now start debugging:
-<img src="https://i.imgur.com/jeCy7SC.png" alt="live debugging" />
+<img src="https://github.com/solo-io/squash-vscode/raw/master/images/debug-live.png" alt="live debugging" />
 
