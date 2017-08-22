@@ -349,7 +349,7 @@ class SquashExtention {
                                     return this.chooseDebugger().then((dbgr) => {
                                         if (dbgr) {
                                             let servicename = service["metadata"]["name"];
-                                            let cmd = `addservice "${servicename}" "${img}" "${dbgr}"`;
+                                            let cmd = `debug-service "${servicename}" "${img}" "${dbgr}"`;
                                             this.cloudPoints.get_all_locations().forEach((v) => {
                                                 cmd += " --breakpoint="+v
                                             });
@@ -683,7 +683,7 @@ class SquashExtention {
         return new Promise((resolve, reject) => {
             return this.chooseDebugger().then((dbgr) => {
                 if (dbgr) {
-                    return squash(`addcontainer ${imgid} ${pod} ${container} ${dbgr} `).then((res) => {
+                    return squash(`debug-container ${imgid} ${pod} ${container} ${dbgr} `).then((res) => {
                         return resolve(res["id"]);
                     });
                 }
