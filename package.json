@@ -3,16 +3,16 @@
     "name": "squash",
     "displayName": "Squash",
     "description": "Debug microservices with Squash",
-    "version": "0.1.0",
+    "version": "0.1.2",
     "publisher": "ilevine",
     "author": {
         "name": "solo.io",
         "email": "idit.levine@solo.io",
         "url": "https://www.solo.io"
       },
-    "homepage": "https://github.com/solo-io/squash/blob/master/README.md",
+    "homepage": "https://github.com/solo-io/squash-vscode/blob/master/README.md",
       "bugs": {
-          "url": "https://github.com/solo-io/squash/issues"
+          "url": "https://github.com/solo-io/squash-vscode/issues"
       },
     "icon": "images/squash-icon.png",
     "galleryBanner": {
