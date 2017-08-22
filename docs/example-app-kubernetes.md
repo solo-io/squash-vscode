@@ -13,7 +13,7 @@ Table of Contents
 - A kubernetes cluster with [kubectl configured](https://kubernetes.io/docs/tasks/tools/install-kubectl/#configure-kubectl).
 - Go extention installed, with the dlv debugger [configured](https://github.com/Microsoft/vscode-go/wiki/Debugging-Go-code-using-VS-Code#set-up-configurations-in-launchjson).
 - Squash server & client [installed](https://github.com/solo-io/squash-initial/blob/master/docs/install/kubernetes.md).
-- Squash command line binary [installed](https://github.com/solo-io/squash-initial/blob/master/docs/cli.md#install).
+- Squash command line binary [installed](https://github.com/solo-io/squash-initial/tree/master/docs/install#command-line-interface-cli).
 - Squash vs-code extention should be [installed and configured](#configuration).
 - Docker repository that you can push images to, and that kubernetes can access (docker hub for example)
 
@@ -194,27 +194,24 @@ $ kubectl create -f microservice.yml
 If you have the kubernetes vscode extention, you can run the command "Kubernetes Create" while the manifest file is open.
 
 ## Debug
-In VS Code, issue the command "Squash: Attach to container":
-<img src="https://i.imgur.com/UzNEFiU.png" alt="Choose Command" />
+In VS Code, issue the command "Squash: Debug Container":
+<img src="https://i.imgur.com/HUsnVIk.png" alt="Choose Command" />
 
 Select your pod:
-<img src="https://i.imgur.com/WENeR79.png" alt="Select pod" />
+<img src="https://i.imgur.com/Hwk4d5E.png" alt="Select pod" />
 
 Select your container:
-<img src="https://i.imgur.com/pF7xWik.png" alt="Select Container" />
+<img src="https://i.imgur.com/vcSfUWf.png" alt="Select Container" />
  
 Select the debugger:
-<img src="https://i.imgur.com/JLqCGaF.png" alt="Select Debugger" />
- 
-Wait for the session to connect:
-<img src="https://i.imgur.com/70a3R3t.png" alt="Wait session" />
+<img src="https://i.imgur.com/JqLmO1h.png" alt="Select Debugger" />
  
 Once the debug session was established, you will see an inormational message about it:
-<img src="https://i.imgur.com/uGynNvB.png" alt="Session connected" />
+<img src="https://i.imgur.com/eDmsNqS.png" alt="Session connected" />
  
 Wait for a debug event:
-<img src="https://i.imgur.com/3s4Gn8A.png" alt="Wait Debug Event" />
+<img src="https://i.imgur.com/z43eqWe.png" alt="Wait Debug Event" />
  
 You can now start debugging:
-<img src="https://i.imgur.com/IIlY2dv.png" alt="live debugging" />
+<img src="https://i.imgur.com/jeCy7SC.png" alt="live debugging" />
 
