@@ -13,7 +13,7 @@
 <BR><BR>
 
 ## What is squash ?
-Squash, a tool for debugging distributed applications, is designed to bring the strength of modern debuggers and the convenience of their IDEs to microservices developers. Squash uses popular, powerful and mature debuggers, and integrates them seamlessly with leading cluster managers/paas. This allows devs to use the debugger of their choice, and the IDEs that support it, to debug microservices on any platform.
+Squash, a tool for debugging distributed applications, is designed to bring the strength of modern debuggers and the convenience of their IDEs to microservices developers. Squash uses popular, powerful and mature debuggers, and integrates them seamlessly with leading container orchestration platform. This allows devs to use the debugger of their choice, and the IDEs that support it, to debug microservices on any platform.
 
 ## What is squash extention ?
 The Squash VS Code extenstion allows Squash to use Visual Studio Code as its user interface. 
