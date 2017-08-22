@@ -573,7 +573,7 @@ class SquashExtention {
                         } else {
                             let autorun : string[] = null;
                             if (remotepath) {
-                                autorun = [`set substitute-path ${remotepath} ${localpath}`];
+                                autorun = [`set substitute-path "${remotepath}" "${localpath}"`];
                             }
                             debuggerconfig = {
                                 type: "gdb",
@@ -581,6 +581,7 @@ class SquashExtention {
                                 name: "Attach to gdbserver",
                                 target: "localhost:" + number,
                                 remote: true,
+                                cwd: localpath,
                                 autorun: autorun
                             };
                         }
