@@ -52,7 +52,8 @@
         "onCommand:vs-squash.stopServiceWatch",        
         "onCommand:vs-squash.waitForServiceSession",
         "onCommand:vs-squash.stopWaitForServiceSession",
-        "onCommand:vs-squash.toggleCloudBreakpoint"
+        "onCommand:vs-squash.toggleCloudBreakpoint",
+        "onCommand:vs-squash.startWatchForImage"
     ],
     "main": "./out/src/extension",
     "contributes": {
@@ -110,6 +111,10 @@
             {
                 "command": "vs-squash.toggleCloudBreakpoint",
                 "title": "Squash: Toggle Squash Breakpoint"
+            },
+            {
+                "command": "vs-squash.startWatchForImage",
+                "title": "Squash: Debug Container in Service Mesh"
             }
         ]
     },

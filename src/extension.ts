@@ -23,8 +23,9 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('vs-squash.startServiceWatch', () => { se.startServiceWatch(); }),
         vscode.commands.registerCommand('vs-squash.stopServiceWatch', () => { se.stopServiceWatch(); }),
         vscode.commands.registerCommand('vs-squash.waitForServiceSession', () => { se.waitForServiceSession(); }),
+        vscode.commands.registerCommand('vs-squash.startWatchForImage', () => { se.startWatchForImage(); }),
         vscode.commands.registerCommand('vs-squash.stopWaitForServiceSession', () => { se.stopWaitForServiceSession(); }),
-        vscode.commands.registerCommand('vs-squash.toggleCloudBreakpoint', () => { se.cloudPoints.toggle(); })
+        vscode.commands.registerCommand('vs-squash.toggleCloudBreakpoint', () => { se.cloudPoints.toggle(); })        
     ];
 
     subscriptions.forEach((element) => {
@@ -376,6 +377,31 @@ class SquashExtention {
         return promise.catch(handleError);
     }
 
+    startWatchForImage() {
+        let promise = this.chooseService().then((service) => {
+            if (service) {
+                return this.getImagesOfService(service).then(
+                    (images) => {
+                        if (images) {
+                            return this.chooseImage(images).then((img) => {
+                                if (img) {
+                                    this.waiter.showWaiting();
+                                    return this.waitForDebugConfigWithImage(img).then(
+                                        (dbgconfig:any) => {
+                                            return this.waitAndDebug(dbgconfig.id,10);
+                                        }
+                                    );
+                                }
+                            });
+                        }
+                    }
+                );
+            }
+        });
+
+        return promise.catch(handleError);
+    }
+
     stopServiceWatch() {
  
         let promise = squash(`list`).then(
@@ -443,6 +469,55 @@ class SquashExtention {
 
         return promise.catch(handleError);
     }
+    
+
+    waitForDebugConfigWithImage_(image : string, resolve) {
+        
+        setTimeout(()=>{
+            if (this.stopWaiting){
+                resolve(null);
+            }
+            this.findDebugConfigWithImage(image).then(
+                (dbgconfig) => {
+                    if (dbgconfig == null){
+                        this.waitForDebugConfigWithImage_(image, resolve)        
+                    } else {
+                        resolve(dbgconfig);
+                    }
+                }
+            );
+
+        },1000);
+
+    }
+
+    
+    waitForDebugConfigWithImage(image : string) {
+        return new Promise((resolve, reject) => {
+            this.waitForDebugConfigWithImage_(image, resolve);
+        });
+            
+
+    }
+
+    findDebugConfigWithImage(image : string) {
+
+        let promise = squash(`list`).then(
+            (dbgconfiglist) => {
+                let dbgItems: pickitems.DbgConfigPickItem[] = [];
+
+                for (let dbgconfig of dbgconfiglist) {
+                    if (dbgconfig["image"] == image) {
+                        return dbgconfig;
+                    }
+                }
+                return null;                
+            }
+        );
+
+        return promise.catch(handleError);
+    }
+
 
 
     attachToPod() {
@@ -681,14 +756,13 @@ class SquashExtention {
 
     requestAttachment(imgid, pod, container): Promise<string> {
         console.log(`requestAttachment ${imgid}, ${pod}, ${container}`);
-        return new Promise((resolve, reject) => {
-            return this.chooseDebugger().then((dbgr) => {
-                if (dbgr) {
-                    return squash(`debug-container ${imgid} ${pod} ${container} ${dbgr} `).then((res) => {
-                        return resolve(res["id"]);
-                    });
-                }
-            });
+
+        return this.chooseDebugger().then((dbgr) => {
+            if (dbgr) {
+                return squash(`debug-container ${imgid} ${pod} ${container} ${dbgr} `).then((res) => {
+                    return res["id"];
+                });
+            }
         });
     }
 
