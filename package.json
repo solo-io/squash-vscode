@@ -1,19 +1,18 @@
 {
-
     "name": "squash",
     "displayName": "Squash",
     "description": "Debug microservices with Squash",
-    "version": "0.1.2",
+    "version": "0.1.3",
     "publisher": "ilevine",
     "author": {
         "name": "solo.io",
         "email": "idit.levine@solo.io",
         "url": "https://www.solo.io"
-      },
+    },
     "homepage": "https://github.com/solo-io/squash-vscode/blob/master/README.md",
-      "bugs": {
-          "url": "https://github.com/solo-io/squash-vscode/issues"
-      },
+    "bugs": {
+        "url": "https://github.com/solo-io/squash-vscode/issues"
+    },
     "icon": "images/squash-icon.png",
     "galleryBanner": {
         "color": "#4a4a4a",
@@ -26,7 +25,6 @@
             "description": "Chat at solo.io slack channel"
         }
     ],
-
     "keywords": [
         "docker",
         "debugger",
@@ -37,7 +35,7 @@
     "repository": {
         "type": "git",
         "url": "https://github.com/solo-io/squash-vscode.git"
-      },
+    },
     "license": "SEE LICENSE IN LICENSE",
     "engines": {
         "vscode": "^1.12.0"
@@ -49,7 +47,7 @@
     "activationEvents": [
         "onCommand:vs-squash.attachToPod",
         "onCommand:vs-squash.startServiceWatch",
-        "onCommand:vs-squash.stopServiceWatch",        
+        "onCommand:vs-squash.stopServiceWatch",
         "onCommand:vs-squash.waitForServiceSession",
         "onCommand:vs-squash.stopWaitForServiceSession",
         "onCommand:vs-squash.toggleCloudBreakpoint",
