@@ -2,7 +2,7 @@
     "name": "squash",
     "displayName": "Squash",
     "description": "Debug microservices with Squash",
-    "version": "0.1.4",
+    "version": "0.1.5",
     "publisher": "ilevine",
     "author": {
         "name": "solo.io",
@@ -13,7 +13,7 @@
     "bugs": {
         "url": "https://github.com/solo-io/squash-vscode/issues"
     },
-    "icon": "images/squash-icon.png",
+    "icon": "images/squash Avert.png",
     "galleryBanner": {
         "color": "#4a4a4a",
         "theme": "dark"
