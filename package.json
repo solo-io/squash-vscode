@@ -13,7 +13,7 @@
     "bugs": {
         "url": "https://github.com/solo-io/squash-vscode/issues"
     },
-    "icon": "images/squash Avert.png",
+    "icon": "images/squash-avert.png",
     "galleryBanner": {
         "color": "#4a4a4a",
         "theme": "dark"
