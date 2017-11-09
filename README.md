@@ -1,9 +1,9 @@
 
 
 <h1 align="center">
-    <img src="https://i.imgur.com/pRMwGOj.png" alt="squash" width="100" height="118">
+    <img src="images/squash Avert.png" alt="squash" width="200" height="248">
   <br>
- Squash: debugger for microservices
+ Debugger for microservices
  <br>
   VS Code extension
 </h1>
