@@ -662,7 +662,7 @@ class SquashExtention {
                         }
 
                         return vscode.commands.executeCommand(
-                            'vscode.startDebugging',
+                            'vscode.debug.startDebugging',
                             // TODO: let the user chose a workspace..
                             vscode.workspace.workspaceFolders[0],
                             debuggerconfig
