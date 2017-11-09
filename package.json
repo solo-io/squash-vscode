@@ -2,7 +2,7 @@
     "name": "squash",
     "displayName": "Squash",
     "description": "Debug microservices with Squash",
-    "version": "0.1.3",
+    "version": "0.1.4",
     "publisher": "ilevine",
     "author": {
         "name": "solo.io",
