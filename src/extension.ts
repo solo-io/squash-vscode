@@ -20,12 +20,8 @@ export function activate(context: vscode.ExtensionContext) {
     let se = new SquashExtention(context);
     const subscriptions = [
         vscode.commands.registerCommand('vs-squash.attachToPod', () => { se.attachToPod(); }),
-        vscode.commands.registerCommand('vs-squash.startServiceWatch', () => { se.startServiceWatch(); }),
-        vscode.commands.registerCommand('vs-squash.stopServiceWatch', () => { se.stopServiceWatch(); }),
-        vscode.commands.registerCommand('vs-squash.waitForServiceSession', () => { se.waitForServiceSession(); }),
         vscode.commands.registerCommand('vs-squash.startWatchForImage', () => { se.startWatchForImage(); }),
         vscode.commands.registerCommand('vs-squash.stopWaitForServiceSession', () => { se.stopWaitForServiceSession(); }),
-        vscode.commands.registerCommand('vs-squash.toggleCloudBreakpoint', () => { se.cloudPoints.toggle(); })        
     ];
 
     subscriptions.forEach((element) => {
@@ -385,10 +381,15 @@ class SquashExtention {
                         if (images) {
                             return this.chooseImage(images).then((img) => {
                                 if (img) {
-                                    this.waiter.showWaiting();
-                                    return this.waitForDebugConfigWithImage(img).then(
-                                        (dbgconfig:any) => {
-                                            return this.waitAndDebug(dbgconfig.id,10);
+                                    return this.chooseDebugger().then((dbg) => {
+                                            if (dbg) {
+                                                this.waiter.showWaiting();
+                                                return this.waitForDebugConfigWithImage(img, dbg).then(
+                                                    (dbgconfigname:string) => {
+                                                        return this.waitAndDebug(dbgconfigname, 10);
+                                                    }
+                                                );
+                                            }                                        
                                         }
                                     );
                                 }
@@ -471,30 +472,32 @@ class SquashExtention {
     }
     
 
-    waitForDebugConfigWithImage_(image : string, resolve) {
-        
-        setTimeout(()=>{
+    waitForDebugConfigWithImage_(image : string, dbgr : string, resolve, reject) {
+        squash(`debug-request ${image} ${dbgr}`).then((res) => {
+            let requestname = res["metadata"]["name"];
+            return this.waitForDebugRequest(requestname, resolve, reject);
+            
+        }).catch(reject);
+    }
+
+    waitForDebugRequest(requestname, resolve, reject) {
+        return setTimeout(()=>{
             if (this.stopWaiting){
                 resolve(null);
             }
-            this.findDebugConfigWithImage(image).then(
-                (dbgconfig) => {
-                    if (dbgconfig == null){
-                        this.waitForDebugConfigWithImage_(image, resolve)        
-                    } else {
-                        resolve(dbgconfig);
-                    }
+            squash(`list debugrequests  ${requestname}`).then((res) => {
+                if (res["status"]["debug_attachment_ref"]) {
+                    resolve(res["status"]["debug_attachment_ref"])
+                } else {
+                    this.waitForDebugRequest(requestname, resolve, reject);
                 }
-            );
-
-        },1000);
-
+            });
+        },1000);        
     }
-
     
-    waitForDebugConfigWithImage(image : string) {
+    waitForDebugConfigWithImage(image : string, dbgr : string) {
         return new Promise((resolve, reject) => {
-            this.waitForDebugConfigWithImage_(image, resolve);
+            this.waitForDebugConfigWithImage_(image, dbgr, resolve, reject);
         });
             
 
@@ -605,70 +608,67 @@ class SquashExtention {
         this.stopWaiting = false;
         this.waitingFor = dbgconfigid;
         this.waiter.showWaiting();
-        return this.waitForAttachment(dbgconfigid, timeout).then((dbgsession) => {
+        return this.waitForAttachment(dbgconfigid, timeout).then((debugattachment) => {
             if (this.stopWaiting == true) {
                 return;
             }
             this.waiter.hideWaiting();
-            if (!dbgsession) {
+            if (!debugattachment) {
                 return;
             }
-            let remote = dbgsession["url"];
-            let dbgconfigid = dbgsession["debugConfigId"];
+            let remote = debugattachment["status"]["debug_server_address"];
+            let dbgconfigid = debugattachment["metadata"]["name"];
             console.log(`Attachment waited! dbgconfigid: "${dbgconfigid}";remote: ${remote}`);
 
-            return squash("list " + dbgconfigid).then((dbgconfig) => {
-
-                // TODO: close the forwarder in the end of debugsession.
-                // not sure how to tell when the debug session ends. most chances the pod will
-                // die with it, thus killing the forwarder, making this not a big problem.
-                return kubectl_portforward(remote).then(
-                    (number) => {
-                        console.log("Local port forward for debug server is: localhost:" + number);
-                        vscode.window.showInformationMessage('Starting debug session' + remote);
-                        let remotepath = get_conf_or("remotePath", null);
-                        let localpath = vscode.workspace.rootPath;
-                        let debuggerconfig;
-                        if (dbgconfig["debugger"] == "dlv") {
-                            debuggerconfig = {
-                                name: "Remote",
-                                type: "go",
-                                request: "launch",
-                                mode: "remote",
-                                port: number,
-                                host: "127.0.0.1",
-                                program:  localpath,
-                                remotePath: remotepath,
-                          //      stopOnEntry: true,
-                                env: {},
-                                args: [],
-                                showLog: true,
-                                trace: "verbose"
-                            };
-                        } else {
-                            let autorun : string[] = null;
-                            if (remotepath) {
-                                autorun = [`set substitute-path "${remotepath}" "${localpath}"`];
-                            }
-                            debuggerconfig = {
-                                type: "gdb",
-                                request: "attach",
-                                name: "Attach to gdbserver",
-                                target: "localhost:" + number,
-                                remote: true,
-                                cwd: localpath,
-                                autorun: autorun
-                            };
+            // TODO: close the forwarder in the end of debugsession.
+            // not sure how to tell when the debug session ends. most chances the pod will
+            // die with it, thus killing the forwarder, making this not a big problem.
+            return kubectl_portforward(remote).then(
+                (number) => {
+                    console.log("Local port forward for debug server is: localhost:" + number);
+                    vscode.window.showInformationMessage('Starting debug session' + remote);
+                    let remotepath = get_conf_or("remotePath", null);
+                    let localpath = vscode.workspace.rootPath;
+                    let debuggerconfig;
+                    if (debugattachment["spec"]["debugger"] == "dlv") {
+                        debuggerconfig = {
+                            name: "Remote",
+                            type: "go",
+                            request: "launch",
+                            mode: "remote",
+                            port: number,
+                            host: "127.0.0.1",
+                            program:  localpath,
+                            remotePath: remotepath,
+                        //      stopOnEntry: true,
+                            env: {},
+                            args: [],
+                            showLog: true,
+                            trace: "verbose"
+                        };
+                    } else {
+                        let autorun : string[] = null;
+                        if (remotepath) {
+                            autorun = [`set substitute-path "${remotepath}" "${localpath}"`];
                         }
+                        debuggerconfig = {
+                            type: "gdb",
+                            request: "attach",
+                            name: "Attach to gdbserver",
+                            target: "localhost:" + number,
+                            remote: true,
+                            cwd: localpath,
+                            autorun: autorun
+                        };
+                    }
 
-                        return vscode.debug.startDebugging(
-                            // TODO: let the user chose a workspace..
-                            vscode.workspace.workspaceFolders[0],
-                            debuggerconfig
-                        );
+                    return vscode.debug.startDebugging(
+                        // TODO: let the user chose a workspace..
+                        vscode.workspace.workspaceFolders[0],
+                        debuggerconfig
+                    );
 
-                    });
-            });
+                });
         }).catch((reason) => {
             this.waiter.hideWaiting();
             throw reason;
@@ -761,7 +761,8 @@ class SquashExtention {
         return this.chooseDebugger().then((dbgr) => {
             if (dbgr) {
                 return squash(`debug-container ${imgid} ${pod} ${container} ${dbgr} `).then((res) => {
-                    return res["id"];
+                    let name = res["metadata"]["name"];
+                    return name;
                 });
             }
         });

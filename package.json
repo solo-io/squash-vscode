@@ -46,11 +46,7 @@
     ],
     "activationEvents": [
         "onCommand:vs-squash.attachToPod",
-        "onCommand:vs-squash.startServiceWatch",
-        "onCommand:vs-squash.stopServiceWatch",
-        "onCommand:vs-squash.waitForServiceSession",
         "onCommand:vs-squash.stopWaitForServiceSession",
-        "onCommand:vs-squash.toggleCloudBreakpoint",
         "onCommand:vs-squash.startWatchForImage"
     ],
     "main": "./out/src/extension",
@@ -87,28 +83,12 @@
         },
         "commands": [
             {
-                "command": "vs-squash.startServiceWatch",
-                "title": "Squash: Debug Service"
-            },
-            {
-                "command": "vs-squash.waitForServiceSession",
-                "title": "Squash: Resume Debug Session"
-            },
-            {
                 "command": "vs-squash.attachToPod",
                 "title": "Squash: Debug Container"
             },
             {
                 "command": "vs-squash.stopWaitForServiceSession",
                 "title": "Squash: Release Debug Session"
-            },
-            {
-                "command": "vs-squash.stopServiceWatch",
-                "title": "Squash: Stop Debug Service"
-            },
-            {
-                "command": "vs-squash.toggleCloudBreakpoint",
-                "title": "Squash: Toggle Squash Breakpoint"
             },
             {
                 "command": "vs-squash.startWatchForImage",
