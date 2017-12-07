@@ -4,7 +4,6 @@
 import * as vscode from 'vscode';
 import * as shelljs from 'shelljs';
 import * as pickitems from './pickitems';
-import {CloudPoints} from './cloudpoints';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -194,12 +193,10 @@ class SquashExtention {
     waiter: WaitWidget;
     stopWaiting: boolean;
     waitingFor: string;
-    cloudPoints : CloudPoints;
 
     constructor(context: vscode.ExtensionContext) {
         this.waiter = new WaitWidget();
         this.stopWaiting = false;
-        this.cloudPoints = new CloudPoints(context);
     }
 
 
@@ -326,53 +323,6 @@ class SquashExtention {
         return picks
     }
 
-    startServiceWatch() {
-        /*
-         * TODO: As soon as we support more then one container cluster orchestration, add a question here asking
-         * which one to use. 
-         * 
-         *  1. kubernetes
-         *  2. cloud foundry
-         *  3. docker swarm
-         *  4. mesos
-         */
-        let promise = this.chooseService().then((service) => {
-            if (service) {
-                return this.getImagesOfService(service).then(
-                    (images) => {
-                        if (images) {
-                            return this.chooseImage(images).then((img) => {
-                                if (img) {
-                                    return this.chooseDebugger().then((dbgr) => {
-                                        if (dbgr) {
-                                            let servicename = service["metadata"]["name"];
-                                            let cmd = `debug-service "${servicename}" "${img}" "${dbgr}"`;
-                                            this.cloudPoints.get_all_locations().forEach((v) => {
-                                                cmd += " --breakpoint="+v
-                                            });
-                                            return squash(cmd);
-                                        }
-                                    });
-                                }
-                            });
-                        }
-                    }
-                );
-            }
-        });
-
-        promise.then((dbgconfig) => {
-            if (dbgconfig) {
-                let id = dbgconfig.id;
-                vscode.window.showInformationMessage('Added debug config id:' + id);
-                return this.waitForServiceSession(dbgconfig);
-            }
-
-        })
-
-        return promise.catch(handleError);
-    }
-
     startWatchForImage() {
         let promise = this.chooseService().then((service) => {
             if (service) {
@@ -402,35 +352,7 @@ class SquashExtention {
 
         return promise.catch(handleError);
     }
-
-    stopServiceWatch() {
- 
-        let promise = squash(`list`).then(
-            (dbgconfiglist) => {
-                let dbgItems: pickitems.DbgConfigPickItem[] = [];
-                dbgconfiglist.forEach((dbgconfig) => {
-                    if (dbgconfig["attachment"]["type"] == "service") {
-                        dbgItems.push(new pickitems.DbgConfigPickItem(dbgconfig));
-                    }
-                });
-                return vscode.window.showQuickPick(dbgItems).then((item) => {
-                    if (item) {
-                        let dbgconfigid = item.dbgconfig["id"];
-                        if ((this.stopWaiting == false) && (this.waitingFor == dbgconfigid)) {
-                            this.cancelWaiting();
-                        }
-
-                        return squash(`delete "${dbgconfigid}"`);
-                    }
-                });
-
-
-            }
-        );
-
-        return promise.catch(handleError);
-    }
-
+    
     stopWaitForServiceSession() {
         vscode.window.showInformationMessage("Stop waiting for session?", "Yes", "No").then(
             (answer) => {
@@ -440,38 +362,7 @@ class SquashExtention {
             }
         );
     }
-
-    waitForServiceSession(dbgconfig = null) {
-
-        if (dbgconfig) {
-            return this.waitAndDebug(dbgconfig.id, 60 * 60);
-        }
-
-        let promise = squash(`list`).then(
-            (dbgconfiglist) => {
-                let dbgItems: pickitems.DbgConfigPickItem[] = [];
-
-                for (let dbgconfig of dbgconfiglist) {
-                    if (dbgconfig["attachment"]["type"] == "service") {
-                        dbgItems.push(new pickitems.DbgConfigPickItem(dbgconfig));
-                    }
-                }
-                return vscode.window.showQuickPick(dbgItems).then((item) => {
-                    if (item) {
-                        // wait for an hour
-                        return this.waitAndDebug(item.dbgconfig.id, 60 * 60);
-                    }
-                });
-
-
-            }
-        );
-
-
-        return promise.catch(handleError);
-    }
     
-
     waitForDebugConfigWithImage_(image : string, dbgr : string, resolve, reject) {
         squash(`debug-request ${image} ${dbgr}`).then((res) => {
             let requestname = res["metadata"]["name"];
@@ -551,10 +442,6 @@ class SquashExtention {
             output2 = output2.filter(v => v != '');
             return output2;
         });
-    }
-
-    registerApp(imageid, breakpoints) {
-
     }
 
     debugContainer(imageid, pod) {
