@@ -172,7 +172,7 @@ class WaitWidget {
         // Create as needed
         if (!this._statusBarItem) {
             this._statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
-            this._statusBarItem.text = "⏱️ Waiting for Debug Session"
+            this._statusBarItem.text = "⏱️ Waiting for Debug Attachment"
             this._statusBarItem.command = "vs-squash.stopWaitForServiceSession"
         }
 
