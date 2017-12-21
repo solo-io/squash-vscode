@@ -268,7 +268,7 @@ class SquashExtention {
         });
     }
     chooseDebugger(): Promise<string> {
-        let debuggers = ["gdb", "dlv"]
+        let debuggers = ["gdb", "dlv", "java"]
         return new Promise((resolve, reject) => {
             vscode.window.showQuickPick(debuggers).then((v)=>{resolve(v);});
         });
@@ -630,36 +630,49 @@ class SquashExtention {
                     let remotepath = get_conf_or("remotePath", null);
                     let localpath = vscode.workspace.rootPath;
                     let debuggerconfig;
-                    if (debugattachment["spec"]["debugger"] == "dlv") {
+                    switch(debugattachment["spec"]["debugger"]) {
+                        case "dlv":
+                            debuggerconfig = {
+                                name: "Remote",
+                                type: "go",
+                                request: "launch",
+                                mode: "remote",
+                                port: number,
+                                host: "127.0.0.1",
+                                program:  localpath,
+                                remotePath: remotepath,
+                            //      stopOnEntry: true,
+                                env: {},
+                                args: [],
+                                showLog: true,
+                                trace: "verbose"
+                            };
+                            break;
+                        case "java":
                         debuggerconfig = {
-                            name: "Remote",
-                            type: "go",
-                            request: "launch",
-                            mode: "remote",
-                            port: number,
-                            host: "127.0.0.1",
-                            program:  localpath,
-                            remotePath: remotepath,
-                        //      stopOnEntry: true,
-                            env: {},
-                            args: [],
-                            showLog: true,
-                            trace: "verbose"
-                        };
-                    } else {
-                        let autorun : string[] = null;
-                        if (remotepath) {
-                            autorun = [`set substitute-path "${remotepath}" "${localpath}"`];
-                        }
-                        debuggerconfig = {
-                            type: "gdb",
+                            type: "java",
                             request: "attach",
-                            name: "Attach to gdbserver",
+                            name: "Attach to java process",
                             target: "localhost:" + number,
                             remote: true,
-                            cwd: localpath,
-                            autorun: autorun
+                            cwd: localpath
                         };
+                        break;
+                        default:
+                            let autorun : string[] = null;
+                            if (remotepath) {
+                                autorun = [`set substitute-path "${remotepath}" "${localpath}"`];
+                            }
+                            debuggerconfig = {
+                                type: "gdb",
+                                request: "attach",
+                                name: "Attach to gdbserver",
+                                target: "localhost:" + number,
+                                remote: true,
+                                cwd: localpath,
+                                autorun: autorun
+                            };
+                            break;
                     }
 
                     return vscode.debug.startDebugging(
