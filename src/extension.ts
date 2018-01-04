@@ -4,6 +4,17 @@
 import * as vscode from 'vscode';
 import * as shelljs from 'shelljs';
 import * as pickitems from './pickitems';
+import { setTimeout } from 'timers';
+
+import * as kube from './kube-interfaces';
+import * as squashinterface from './squash-interfaces';
+
+
+function asyncTimeout(ms: number): Promise<any> {
+    return new Promise((resolve, reject) => {
+        setTimeout(resolve, ms);
+    });
+}
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -44,7 +55,7 @@ function exec(cmd): Promise<any> {
     let promise = new Promise((resolve, reject) => {
         let handler = function (code, stdout, stderr) {
             if (code !== 0) {
-                reject(new ExecError(code, stderr));
+                reject(new ExecError(code, stdout, stderr));
             } else {
                 resolve(stdout);
             }
@@ -63,8 +74,9 @@ function exec(cmd): Promise<any> {
 class ExecError extends Error {
     code: number;
     stderr: string;
+    stdout: string;
 
-    constructor(code: number, stderr: string) {
+    constructor(code: number, stdout: string, stderr: string) {
         super(stderr.trim());
 
         // Set the prototype explicitly.
@@ -72,16 +84,8 @@ class ExecError extends Error {
 
         this.code = code;
         this.stderr = stderr;
+        this.stdout = stdout;
     }
-
-    getCode() {
-        return this.code;
-    }
-
-    getStderr() {
-        return this.stderr;
-    }
-
 }
 
 
@@ -128,7 +132,7 @@ function kubectl_portforward(remote): Promise<number> {
         let handler = function (code, stdout, stderr) {
             if (resolved != true) {
                 if (code !== 0) {
-                    reject(new ExecError(code, stderr));
+                    reject(new ExecError(code, stdout, stderr));
                 } else {
                     reject(new Error("Didn't receive port"));
                 }
@@ -153,14 +157,15 @@ function kubectl_portforward(remote): Promise<number> {
     return p;
 }
 
-function squash(cmd): Promise<any> {
+async function squash<T=any>(cmd): Promise<T> {
     let url = get_conf_or("squash-server-url", "");
 
     if (url) {
         url = " --url=" + url
     }
 
-    return exec(get_conf_or("squash-path", "squash") + url + " --json=true " + cmd).then(JSON.parse);
+    const body = await exec(get_conf_or("squash-path", "squash") + url + " --json=true " + cmd);
+    return JSON.parse(body);
 }
 
 class WaitWidget {
@@ -200,29 +205,29 @@ class SquashExtention {
     }
 
 
-    selectPod(): Promise<any> {
-        return this.getPods().then((pods) => {
+    async selectPod(): Promise<kube.Pod> {
+        const pods = await this.getPods();
 
-            let podoptions: vscode.QuickPickOptions = {
-                placeHolder: "Please select a pod",
-            };
+        let podoptions: vscode.QuickPickOptions = {
+            placeHolder: "Please select a pod",
+        };
 
-            let podItems: pickitems.PodPickItem[] = [];
-            for (let pod of pods) {
-                podItems.push(new pickitems.PodPickItem(pod));
-            }
+        let podItems: pickitems.PodPickItem[] = [];
+        for (let pod of pods) {
+            podItems.push(new pickitems.PodPickItem(pod));
+        }
 
-            return vscode.window.showQuickPick(podItems, podoptions).then((item) => {
-                if (item) {
-                    return item.pod;
-                } else {
-                    return undefined;
-                }
-            });
-        });
+        const item = await vscode.window.showQuickPick(podItems, podoptions);
+
+        if (item) {
+            return item.pod;
+        } else {
+            return undefined;
+        }
+
     }
 
-    selectContainer(pod): Promise<any> {
+    async selectContainer(pod): Promise<kube.Container> {
 
         let containerItems: pickitems.ContainerPickItem[] = [];
         let selectedpod = pod;
@@ -233,67 +238,54 @@ class SquashExtention {
         let conoptions: vscode.QuickPickOptions = {
             placeHolder: "Please select a container",
         };
-        return new Promise<pickitems.ContainerPickItem>((resolve, reject) => {
-            vscode.window.showQuickPick(containerItems, conoptions).then((item) => { resolve(item); });
-        }).then((item) => {
-            if (item) {
-                return item.container;
-            } else {
-                return undefined;
-            }
-        });
+
+        const item = await vscode.window.showQuickPick(containerItems, conoptions);
+        if (item) {
+            return item.container;
+        }
+        return undefined;
+
     }
 
-    chooseService(): Promise<any> {
+    async chooseService(): Promise<kube.Service> {
 
         let options: vscode.QuickPickOptions = {
             placeHolder: "Please select a service to watch",
         };
 
-        return this.getServices().then((services) => {
+        const services = await this.getServices();
 
-            let serviceItems: pickitems.KubePickItem[] = [];
-            for (let service of services) {
-                serviceItems.push(new pickitems.KubePickItem(service, "service"));
-            }
+        let serviceItems: pickitems.KubePickItem[] = [];
+        for (let service of services) {
+            serviceItems.push(new pickitems.KubePickItem(service, "service"));
+        }
 
-            return vscode.window.showQuickPick(serviceItems, options);
-        }).then((service) => {
-            if (service) {
-                return service.obj;
-            }
-        });
+        const service = await vscode.window.showQuickPick(serviceItems, options);
+        if (service) {
+            return service.obj;
+        }
     }
-    chooseDebugger(): Promise<string> {
+
+    async chooseDebugger(): Promise<string> {
         let debuggers = ["gdb", "dlv"]
-        return new Promise((resolve, reject) => {
-            vscode.window.showQuickPick(debuggers).then((v)=>{resolve(v);});
-        });
+        const chosen = await vscode.window.showQuickPick(debuggers);
+        return chosen;
     }
 
 
-    chooseImage(images?: string[]): Promise<string> {
+    async chooseImage(images: string[]): Promise<string> {
         const custom = "-- custom --";
 
         let options: vscode.InputBoxOptions = {
             prompt: "Please input the image, as appears in the pod spec.",
         };
 
-        let handlecustom = (image: pickitems.ImagePickItem): Promise<string> => {
+        let handlecustom = async (image: pickitems.ImagePickItem): Promise<string> => {
             if (image) {
                 if (image.name == custom) {
-                    return new Promise<string>((resolve, reject) => {
-
-                        return vscode.window.showInputBox(options).then(
-                            (img) => {
-                                if (img) {
-                                    return resolve(img);
-                                }
-                            }
-                        );
-                    });
+                    return await vscode.window.showInputBox(options);
                 } else {
-                    return Promise.resolve(image.name);
+                    return image.name;
                 }
             }
         };
@@ -302,18 +294,9 @@ class SquashExtention {
             placeHolder: "Please select the container image",
         };
 
-        if (images) {
-
-            images.push(custom);
-            return new Promise<string>((resolve, reject) => {
-                return vscode.window.showQuickPick(this.imagesToQuickPick(images), imageoptions).then(handlecustom).then((s) => resolve(s));
-            });
-        } else {
-            return this.getImages().then((images) => {
-                images.push(custom);
-                return vscode.window.showQuickPick(this.imagesToQuickPick(images), imageoptions);
-            }).then(handlecustom);
-        }
+        images.push(custom);
+        const potentialchosenimage = await vscode.window.showQuickPick(this.imagesToQuickPick(images), imageoptions);
+        return await handlecustom(potentialchosenimage);
     }
 
 
@@ -323,36 +306,35 @@ class SquashExtention {
         return picks
     }
 
-    startWatchForImage() {
-        let promise = this.chooseService().then((service) => {
-            if (service) {
-                return this.getImagesOfService(service).then(
-                    (images) => {
-                        if (images) {
-                            return this.chooseImage(images).then((img) => {
-                                if (img) {
-                                    return this.chooseDebugger().then((dbg) => {
-                                            if (dbg) {
-                                                this.waiter.showWaiting();
-                                                return this.waitForDebugConfigWithImage(img, dbg).then(
-                                                    (dbgconfigname:string) => {
-                                                        return this.waitAndDebug(dbgconfigname, 10);
-                                                    }
-                                                );
-                                            }                                        
-                                        }
-                                    );
-                                }
-                            });
-                        }
-                    }
-                );
-            }
-        });
+    async startWatchForImage() {
+        try {
 
-        return promise.catch(handleError);
+            const service = await this.chooseService();
+            if (!service) {
+                return;
+            }
+            const images = await this.getImagesOfService(service);
+            if (!images) {
+                return;
+            }
+            const img = await this.chooseImage(images);
+            if (!img) {
+                return;
+            }
+            const dbg = await this.chooseDebugger();
+            if (!dbg) {
+                return;
+            }
+
+            this.waiter.showWaiting();
+            const dbgconfigname = await this.waitForDebugConfigWithImage(img, dbg);
+            return this.waitAndDebug(dbgconfigname, 10);
+
+        } catch (error) {
+            handleError(error)
+        }
     }
-    
+
     stopWaitForServiceSession() {
         vscode.window.showInformationMessage("Stop waiting for session?", "Yes", "No").then(
             (answer) => {
@@ -362,97 +344,57 @@ class SquashExtention {
             }
         );
     }
-    
-    waitForDebugConfigWithImage_(image : string, dbgr : string, resolve, reject) {
-        squash(`debug-request ${image} ${dbgr}`).then((res) => {
-            let requestname = res["metadata"]["name"];
-            return this.waitForDebugRequest(requestname, resolve, reject);
-            
-        }).catch(reject);
-    }
 
-    waitForDebugRequest(requestname, resolve, reject) {
-        return setTimeout(()=>{
-            if (this.stopWaiting){
-                resolve(null);
+    async waitForDebugRequest(requestname): Promise<string> {
+        for (; ;) {
+            if (this.stopWaiting) {
+                return;
             }
             squash(`list debugrequests  ${requestname}`).then((res) => {
                 if (res["status"]["debug_attachment_ref"]) {
-                    resolve(res["status"]["debug_attachment_ref"])
-                } else {
-                    this.waitForDebugRequest(requestname, resolve, reject);
+                    return res["status"]["debug_attachment_ref"];
                 }
             });
-        },1000);        
-    }
-    
-    waitForDebugConfigWithImage(image : string, dbgr : string) {
-        return new Promise((resolve, reject) => {
-            this.waitForDebugConfigWithImage_(image, dbgr, resolve, reject);
-        });
-            
 
+            await asyncTimeout(1000);
+        }
     }
 
-    findDebugConfigWithImage(image : string) {
-
-        let promise = squash(`list`).then(
-            (dbgconfiglist) => {
-                let dbgItems: pickitems.DbgConfigPickItem[] = [];
-
-                for (let dbgconfig of dbgconfiglist) {
-                    if (dbgconfig["image"] == image) {
-                        return dbgconfig;
-                    }
-                }
-                return null;                
-            }
-        );
-
-        return promise.catch(handleError);
+    async waitForDebugConfigWithImage(image: string, dbgr: string): Promise<string> {
+        const result = await squash<squashinterface.DebugRequest>(`debug-request ${image} ${dbgr}`);
+        let requestname = result.metadata.name;
+        return await this.waitForDebugRequest(requestname);
     }
 
-
-
-    attachToPod() {
+    async attachToPod() {
         // ask the user to chose a pod
         // and image id
+        try {
 
-        let containerPromise = this.selectPod().then((pod) => {
+            const pod = await this.selectPod();
             if (pod) {
-                return this.selectContainer(pod).then((container) => {
-                    if (container) {
-                        let containerimage = container["image"];
-                        let containername = container["name"];
-                        let podname = pod["metadata"]["name"];
-                        console.log(`running debug container ${containerimage}, ${podname}, ${containername}`);
-                        return this._debugContainer(containerimage, podname, containername);
-                    }
-                });
+                const container = await this.selectContainer(pod)
+                if (container) {
+                    let containerimage = container["image"];
+                    let containername = container["name"];
+                    let podname = pod["metadata"]["name"];
+                    let podnamespace = pod["metadata"]["namespace"];
+                    console.log(`running debug container ${containerimage}, ${podname}, ${containername}`);
+                    await this._debugContainer(containerimage, podnamespace, podname, containername);
+                }
             }
-        });
-
-        containerPromise.catch(handleError);
+        } catch (error) {
+            handleError(error);
+        }
 
     }
 
-    getImages(): Promise<string[]> {
-        return exec("docker images --format '{{.Repository}}:{{.Tag}}' --filter='dangling=false' -q").then((output) => {
-            let output2: string[] = output.split("\n");
-            output2 = output2.filter(v => v != '');
-            return output2;
-        });
-    }
-
-    debugContainer(imageid, pod) {
+    async debugContainer(imageid, podnamespace, podname) {
         // TODO: verify that coontainer exist and image id matches app
         // or perhaps not request container at all..
 
-        this.findcontainer(imageid, pod).then(
-            (container) => {
-                this._debugContainer(imageid, pod, container);
-            }
-        );
+        const container = await this.findcontainer(imageid, podnamespace, podname)
+        await this._debugContainer(imageid, podnamespace, podname, container);
     }
 
     cancelWaiting() {
@@ -460,42 +402,40 @@ class SquashExtention {
         this.waiter.hideWaiting();
     }
 
-    waitForAttachment(dbgconfigid, timeout): Promise<any> {
+    async waitForAttachment(dbgconfigid: string, timeout: number): Promise<squashinterface.DebugAttachment> {
+        if (this.stopWaiting) {
+            return;
+        }
         let deadline = process.hrtime();
         deadline[0] += timeout;
-        return this._waitForAttachmentDeadline(dbgconfigid, deadline)
-    }
-
-    _waitForAttachmentDeadline(dbgconfigid, deadline): Promise<any> {
-        if (this.stopWaiting) {
-            return Promise.resolve(null)
-        }
 
         let waitcmd = `wait ${dbgconfigid} `;
+        for (; ;) {
 
-        return squash(waitcmd).then((res) => {
-            console.log(`Wait returned: ${res} `)
-            return res;
-        }).catch((err) => {
-            let errinfojson = JSON.parse(err.stderr);
-            if (errinfojson["Type"] == "Timeout") {
-                let nowtime = process.hrtime();
-                if (nowtime[0] > deadline[0]) {
+            try {
+                return await squash<squashinterface.DebugAttachment>(waitcmd);
+            } catch (err) {
+                let errinfojson = JSON.parse(err.stderr);
+                if (errinfojson["Type"] == "Timeout") {
+                    let nowtime = process.hrtime();
+                    if (nowtime[0] > deadline[0]) {
+                        throw err;
+                    }
+                }
+                if (this.stopWaiting === false) {
                     throw err;
                 }
-                return this._waitForAttachmentDeadline(dbgconfigid, deadline)
             }
-            if (this.stopWaiting == false){
-                throw err;
-            }
-        });
+
+        }
     }
 
-    waitAndDebug(dbgconfigid : string, timeout = 60) {
-        this.stopWaiting = false;
+    async waitAndDebug(dbgconfigid: string, timeout = 60) {
+        this.stopWaiting = false as boolean;
         this.waitingFor = dbgconfigid;
         this.waiter.showWaiting();
-        return this.waitForAttachment(dbgconfigid, timeout).then((debugattachment) => {
+        const debugattachment = await this.waitForAttachment(dbgconfigid, timeout);
+        try {
             if (this.stopWaiting == true) {
                 return;
             }
@@ -503,87 +443,86 @@ class SquashExtention {
             if (!debugattachment) {
                 return;
             }
-            let remote = debugattachment["status"]["debug_server_address"];
-            let dbgconfigid = debugattachment["metadata"]["name"];
+
+            if (debugattachment.status.state != "attached") {
+                throw new Error('Failed to attach.');
+            }
+
+            let remote = debugattachment.status.debug_server_address;
+            let dbgconfigid = debugattachment.metadata.name;
             console.log(`Attachment waited! dbgconfigid: "${dbgconfigid}";remote: ${remote}`);
+
 
             // TODO: close the forwarder in the end of debugsession.
             // not sure how to tell when the debug session ends. most chances the pod will
             // die with it, thus killing the forwarder, making this not a big problem.
-            return kubectl_portforward(remote).then(
-                (number) => {
-                    console.log("Local port forward for debug server is: localhost:" + number);
-                    vscode.window.showInformationMessage('Starting debug session' + remote);
-                    let remotepath = get_conf_or("remotePath", null);
-                    let localpath = vscode.workspace.rootPath;
-                    let debuggerconfig;
-                    if (debugattachment["spec"]["debugger"] == "dlv") {
-                        debuggerconfig = {
-                            name: "Remote",
-                            type: "go",
-                            request: "launch",
-                            mode: "remote",
-                            port: number,
-                            host: "127.0.0.1",
-                            program:  localpath,
-                            remotePath: remotepath,
-                        //      stopOnEntry: true,
-                            env: {},
-                            args: [],
-                            showLog: true,
-                            trace: "verbose"
-                        };
-                    } else {
-                        let autorun : string[] = null;
-                        if (remotepath) {
-                            autorun = [`set substitute-path "${remotepath}" "${localpath}"`];
-                        }
-                        debuggerconfig = {
-                            type: "gdb",
-                            request: "attach",
-                            name: "Attach to gdbserver",
-                            target: "localhost:" + number,
-                            remote: true,
-                            cwd: localpath,
-                            autorun: autorun
-                        };
-                    }
+            const localport = await kubectl_portforward(remote)
+            console.log("Local port forward for debug server is: localhost:" + localport);
+            vscode.window.showInformationMessage('Starting debug session' + remote);
+            let remotepath = get_conf_or("remotePath", null);
+            let localpath = vscode.workspace.rootPath;
+            let debuggerconfig;
+            if (debugattachment.spec.debugger == "dlv") {
+                debuggerconfig = {
+                    name: "Remote",
+                    type: "go",
+                    request: "launch",
+                    mode: "remote",
+                    port: localport,
+                    host: "127.0.0.1",
+                    program: localpath,
+                    remotePath: remotepath,
+                    //      stopOnEntry: true,
+                    env: {},
+                    args: [],
+                    showLog: true,
+                    trace: "verbose"
+                };
+            } else {
+                let autorun: string[] = null;
+                if (remotepath) {
+                    autorun = [`set substitute-path "${remotepath}" "${localpath}"`];
+                }
+                debuggerconfig = {
+                    type: "gdb",
+                    request: "attach",
+                    name: "Attach to gdbserver",
+                    target: "localhost:" + localport,
+                    remote: true,
+                    cwd: localpath,
+                    autorun: autorun
+                };
+            }
 
-                    return vscode.debug.startDebugging(
-                        // TODO: let the user chose a workspace..
-                        vscode.workspace.workspaceFolders[0],
-                        debuggerconfig
-                    );
+            return vscode.debug.startDebugging(
+                // TODO: let the user chose a workspace..
+                vscode.workspace.workspaceFolders[0],
+                debuggerconfig
+            );
 
-                });
-        }).catch((reason) => {
+        } catch (reason) {
             this.waiter.hideWaiting();
             throw reason;
-        });
+        }
     }
 
-    _debugContainer(imageid, pod, container): Promise<any> {
-        return this.requestAttachment(imageid, pod, container).then(
-            (dbgconfigid) => {
-                if (dbgconfigid) {
-                    console.log(`requestAttachment dbgconfigid ${dbgconfigid}`);
-                    return this.waitAndDebug(dbgconfigid);
-                }
-                throw new Error('Attachment dbgconfigid not found');
-
-            }).catch(handleError);
-
+    async _debugContainer(imageid, podnamespace, podname, container) {
+        const dbgconfigid = await this.requestAttachment(imageid, podnamespace, podname, container);
+        if (dbgconfigid) {
+            console.log(`requestAttachment dbgconfigid ${dbgconfigid}`);
+            return this.waitAndDebug(dbgconfigid);
+        }
+        throw new Error('Attachment dbgconfigid not found');
     }
 
-    getPods(): Promise<any> {
-        return kubectl_get("pods").then((podsjson) => {
-            return podsjson["items"];
-        });
+    async getPods(): Promise<kube.Pod[]> {
+        const podsjson = await kubectl_get("pods", "--all-namespaces");
+        return podsjson["items"];
     }
 
-    getImagesOfService(service: any): Promise<string[]> {
+    getImagesOfService(service: kube.Service): Promise<string[]> {
         if (service) {
-            return this.selectPods(service["spec"]["selector"]).then(
+            return this.selectPods(service.spec.selector).then(
                 (pods) => {
                     return this.getImagesFromPods(pods)
                 }
@@ -591,10 +530,9 @@ class SquashExtention {
         }
     }
 
-    getServices(): Promise<any[]> {
-        return kubectl_get("services").then((servicesjson) => {
-            return servicesjson["items"];
-        });
+    async getServices(): Promise<kube.Service[]> {
+        const servicesjson = await kubectl_get("services");
+        return servicesjson["items"];
     }
 
     selectPods(selectorMap: any): Promise<any[]> {
@@ -625,36 +563,31 @@ class SquashExtention {
 
 
 
-    findcontainer(imageid, podname): Promise<string> {
-        return this.getPods().then((pods) => {
-            for (let pod of pods) {
-                if (pod["metadata"]["name"] == podname) {
-                    for (let container of pod["spec"]["containers"]) {
-                        if (imageid == container["image"]) {
-                            console.log("found container" + container["name"]);
-                            return container["name"]
-                        }
+    async findcontainer(imageid, podnamespace, podname): Promise<string> {
+        const pods = await this.getPods();
+        for (let pod of pods) {
+            const { metadata } = pod;
+            if (metadata["name"] == podname && metadata["namespace"] == podnamespace) {
+                for (let container of pod["spec"]["containers"]) {
+                    if (imageid == container["image"]) {
+                        console.log("found container" + container["name"]);
+                        return container["name"]
                     }
-                    throw new Error('Container not found');
                 }
+                throw new Error('Container not found');
             }
-            throw new Error('Pod not found');
-        });
+        }
+        throw new Error('Pod not found');
     }
 
-    requestAttachment(imgid, pod, container): Promise<string> {
-        console.log(`requestAttachment ${imgid}, ${pod}, ${container}`);
+    async requestAttachment(imgid, podnamespace, podname, container): Promise<string> {
+        console.log(`requestAttachment ${imgid}, ${podname}, ${container}`);
 
-        return this.chooseDebugger().then((dbgr) => {
-            if (dbgr) {
-                return squash(`debug-container ${imgid} ${pod} ${container} ${dbgr} `).then((res) => {
-                    let name = res["metadata"]["name"];
-                    return name;
-                });
-            }
-        });
+        const dbgr = await this.chooseDebugger();
+        if (dbgr) {
+            const attachment = await squash(`debug-container --namespace=${podnamespace} ${imgid} ${podname} ${container} ${dbgr}`);
+            let name = attachment["metadata"]["name"];
+            return name;
+        }
     }
-
 }
-
-
