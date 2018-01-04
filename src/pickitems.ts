@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
 import * as shelljs from 'shelljs';
+import * as kube from './kube-interfaces';
+import * as squashinterface from './squash-interfaces';
 
 export class KubePickItem implements vscode.QuickPickItem {
     label: string;
@@ -21,9 +23,9 @@ export class PodPickItem implements vscode.QuickPickItem {
     description: string;
     detail?: string;
 
-    pod: any;
+    pod: kube.Pod;
 
-    constructor(pod: any) {
+    constructor(pod: kube.Pod) {
         let podname = pod["metadata"]["name"];
         let nodename = pod["spec"]["nodeName"];
         this.label = `${podname} (${nodename})`;
@@ -37,16 +39,14 @@ export class ContainerPickItem implements vscode.QuickPickItem {
     description: string;
     detail?: string;
 
-    container: any;
+    container: kube.Container;
 
-    constructor(container: any) {
+    constructor(container: kube.Container) {
         this.label = container["name"] + " - " + container["image"];
         this.description = "container";
         this.container = container;
     }
 }
-
-
 
 export class ImagePickItem implements vscode.QuickPickItem {
     label: string;
@@ -58,19 +58,5 @@ export class ImagePickItem implements vscode.QuickPickItem {
         this.name = img
         this.label = this.name;
         this.description = "image";
-    }
-}
-
-export class DbgConfigPickItem implements vscode.QuickPickItem {
-    label: string;
-    description: string;
-    detail?: string;
-
-    dbgconfig: any;
-
-    constructor(dbgconfig: any) {
-        this.label = dbgconfig["attachment"]["name"]
-        this.description = "debug-config";
-        this.dbgconfig = dbgconfig;
     }
 }

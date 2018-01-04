@@ -12,8 +12,8 @@ Table of Contents
 ## Prerequisites
 - A kubernetes cluster with [kubectl configured](https://kubernetes.io/docs/tasks/tools/install-kubectl/#configure-kubectl).
 - Go extention installed, with the dlv debugger [configured](https://github.com/Microsoft/vscode-go/wiki/Debugging-Go-code-using-VS-Code#set-up-configurations-in-launchjson).
-- Squash server & client [installed](https://github.com/solo-io/squash-initial/blob/master/docs/install/kubernetes.md).
-- Squash command line binary [installed](https://github.com/solo-io/squash-initial/tree/master/docs/install#command-line-interface-cli).
+- Squash server & client [installed](https://github.com/solo-io/squash/blob/master/docs/install/kubernetes.md).
+- Squash command line binary [installed](https://github.com/solo-io/squash/tree/master/docs/install#command-line-interface-cli).
 - Squash vs-code extention should be [installed and configured](#configuration).
 - Docker repository that you can push images to, and that kubernetes can access (docker hub for example)
 
@@ -21,7 +21,7 @@ Table of Contents
 - Make sure kubectl port-foward functionality works.
 - Make sure you have access to the squash server - use `$ squash --url=http://SQUASH-SERVER-ADDRESS app list` to test that it is working properly.
 
-If you have an issue with either, see the [FAQ for help](https://github.com/solo-io/squash-initial/blob/master/docs/faq.md).
+If you have an issue with either, see the [FAQ for help](https://github.com/solo-io/squash/blob/master/docs/faq.md).
 
 ## Configuration
 Configure the vscode extension:
