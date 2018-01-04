@@ -4,8 +4,13 @@ export interface Metadata {
     namespace: string;
 };
 
+export interface PodSpec {
+    containers: Container[];
+}
+
 export interface Pod {
     metadata: Metadata;
+    spec: PodSpec;
 }
 
 export interface Container {

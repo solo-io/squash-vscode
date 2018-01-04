@@ -66,7 +66,6 @@ function exec(cmd): Promise<any> {
 
     });
 
-
     return promise;
 }
 
@@ -534,13 +533,10 @@ class SquashExtention {
         return podsjson["items"];
     }
 
-    getImagesOfService(service: kube.Service): Promise<string[]> {
+    async getImagesOfService(service: kube.Service): Promise<string[]> {
         if (service) {
-            return this.selectPods(service.spec.selector).then(
-                (pods) => {
-                    return this.getImagesFromPods(pods)
-                }
-            );
+            const pods = await this.selectPods(service.spec.selector);
+            return this.getImagesFromPods(pods)
         }
     }
 
@@ -549,7 +545,7 @@ class SquashExtention {
         return servicesjson["items"];
     }
 
-    selectPods(selectorMap: any): Promise<any[]> {
+    async selectPods(selectorMap: any): Promise<kube.Pod[]> {
         var selectors: string[] = [];
         for (let property in selectorMap) {
             if (selectorMap.hasOwnProperty(property)) {
@@ -557,16 +553,15 @@ class SquashExtention {
             }
         }
 
-        return kubectl_get("pods", "-l", selectors.join(",")).then((podsjson) => {
-            return podsjson["items"];
-        });
+        const podsjson = await kubectl_get("pods", "-l", selectors.join(","));
+        return podsjson["items"];
     }
 
-    getImagesFromPods(pods: any[]): string[] {
+    getImagesFromPods(pods: kube.Pod[]): string[] {
         var images: Set<string> = new Set();
         pods.forEach((pod) => {
-            pod["spec"]["containers"].forEach((container) => {
-                images.add(container["image"])
+            pod.spec.containers.forEach((container) => {
+                images.add(container.image);
             });
         });
 
