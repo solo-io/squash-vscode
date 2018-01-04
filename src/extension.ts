@@ -653,7 +653,8 @@ class SquashExtention {
                             type: "java",
                             request: "attach",
                             name: "Attach to java process",
-                            target: "localhost:" + number,
+                            port: number,
+                            host: "127.0.0.1",
                             remote: true,
                             cwd: localpath
                         };
