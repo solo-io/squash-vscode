@@ -506,9 +506,32 @@ class SquashExtention {
                     throw new Error(`Unknown debugger ${debugattachment.spec.debugger}`);
             }
 
+            let workspace : vscode.WorkspaceFolder;
+
+            if (vscode.workspace.workspaceFolders.length == 0) {
+                throw new Error("Can't start debugging without a project open");
+            } else if (vscode.workspace.workspaceFolders.length == 1) {
+                workspace = vscode.workspace.workspaceFolders[0];
+            } else {
+                let wfoptions: vscode.QuickPickOptions = {
+                    placeHolder: "Please a project to debug",
+                };
+                let wfItems: pickitems.WorkspaceFolderPickItem[] = [];
+                for (let wf of vscode.workspace.workspaceFolders) {
+                    wfItems.push(new pickitems.WorkspaceFolderPickItem(wf));
+                }
+
+                const item = await vscode.window.showQuickPick(wfItems, wfoptions);
+
+                if (item) {
+                    workspace = item.obj;
+                } else {
+                    return;
+                }
+            }
+
             return vscode.debug.startDebugging(
-                // TODO: let the user chose a workspace..
-                vscode.workspace.workspaceFolders[0],
+                workspace,
                 debuggerconfig
             );
 

@@ -26,8 +26,8 @@ export class PodPickItem implements vscode.QuickPickItem {
     pod: kube.Pod;
 
     constructor(pod: kube.Pod) {
-        let podname = pod["metadata"]["name"];
-        let nodename = pod["spec"]["nodeName"];
+        let podname = pod.metadata.name;
+        let nodename = pod.spec.nodeName;
         this.label = `${podname} (${nodename})`;
         this.description = "pod";
         this.pod = pod;
@@ -58,5 +58,17 @@ export class ImagePickItem implements vscode.QuickPickItem {
         this.name = img
         this.label = this.name;
         this.description = "image";
+    }
+}
+
+export class WorkspaceFolderPickItem implements vscode.QuickPickItem {
+    label: string;
+    description: string;
+    detail?: string;
+    obj: vscode.WorkspaceFolder;
+
+    constructor(obj: vscode.WorkspaceFolder) {
+        this.label = obj.name;
+        this.obj = obj;
     }
 }

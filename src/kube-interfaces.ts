@@ -6,6 +6,7 @@ export interface Metadata {
 
 export interface PodSpec {
     containers: Container[];
+    nodeName: string;
 }
 
 export interface Pod {
