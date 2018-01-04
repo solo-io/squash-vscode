@@ -13,6 +13,10 @@ export interface Pod {
     spec: PodSpec;
 }
 
+export interface PodList {
+    items: Pod[];
+}
+
 export interface Container {
     name: string;
     image: string;
@@ -25,4 +29,8 @@ export interface ServiceSpec {
 export interface Service {
     metadata: Metadata;
     spec: ServiceSpec;
+}
+
+export interface ServiceList {
+    items: Service[];
 }

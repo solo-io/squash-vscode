@@ -88,7 +88,7 @@ class ExecError extends Error {
 }
 
 
-function kubectl_get(cmd: string, ...args: string[]): Promise<any> {
+function kubectl_get<T=any>(cmd: string, ...args: string[]): Promise<T> {
     return kubectl("get -o json " + cmd + " " + args.join(" ")).then(JSON.parse);
 }
 
@@ -107,8 +107,6 @@ function get_conf_or(k, d) {
 }
 
 function get_kubectl_proxy_options(): any {
-
-
     let proxy = get_conf_or("kubectl-proxy", "");
     if (proxy) {
         return { env: { http_proxy: proxy } }
@@ -451,7 +449,6 @@ class SquashExtention {
             let dbgconfigid = debugattachment.metadata.name;
             console.log(`Attachment waited! dbgconfigid: "${dbgconfigid}";remote: ${remote}`);
 
-
             // TODO: close the forwarder in the end of debugsession.
             // not sure how to tell when the debug session ends. most chances the pod will
             // die with it, thus killing the forwarder, making this not a big problem.
@@ -490,7 +487,7 @@ class SquashExtention {
                         cwd: localpath
                     };
                     break;
-                default:
+                case "gdb":
                     let autorun: string[] = null;
                     if (remotepath) {
                         autorun = [`set substitute-path "${remotepath}" "${localpath}"`];
@@ -505,6 +502,8 @@ class SquashExtention {
                         autorun: autorun
                     };
                     break;
+                default:
+                    throw new Error(`Unknown debugger ${debugattachment.spec.debugger}`);
             }
 
             return vscode.debug.startDebugging(
@@ -529,8 +528,8 @@ class SquashExtention {
     }
 
     async getPods(): Promise<kube.Pod[]> {
-        const podsjson = await kubectl_get("pods", "--all-namespaces");
-        return podsjson["items"];
+        const podsjson = await kubectl_get<kube.PodList>("pods", "--all-namespaces");
+        return podsjson.items;
     }
 
     async getImagesOfService(service: kube.Service): Promise<string[]> {
@@ -541,8 +540,8 @@ class SquashExtention {
     }
 
     async getServices(): Promise<kube.Service[]> {
-        const servicesjson = await kubectl_get("services");
-        return servicesjson["items"];
+        const servicesjson = await kubectl_get<kube.ServiceList>("services");
+        return servicesjson.items;
     }
 
     async selectPods(selectorMap: any): Promise<kube.Pod[]> {
@@ -553,8 +552,8 @@ class SquashExtention {
             }
         }
 
-        const podsjson = await kubectl_get("pods", "-l", selectors.join(","));
-        return podsjson["items"];
+        const podlist= await kubectl_get<kube.PodList>("pods", "-l", selectors.join(","));
+        return podlist.items;
     }
 
     getImagesFromPods(pods: kube.Pod[]): string[] {
@@ -576,11 +575,11 @@ class SquashExtention {
         const pods = await this.getPods();
         for (let pod of pods) {
             const { metadata } = pod;
-            if (metadata["name"] == podname && metadata["namespace"] == podnamespace) {
-                for (let container of pod["spec"]["containers"]) {
-                    if (imageid == container["image"]) {
-                        console.log("found container" + container["name"]);
-                        return container["name"]
+            if (metadata.name == podname && metadata.namespace == podnamespace) {
+                for (let container of pod.spec.containers) {
+                    if (imageid == container.image) {
+                        console.log("found container" + container.name);
+                        return container.name
                     }
                 }
                 throw new Error('Container not found');
