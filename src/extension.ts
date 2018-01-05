@@ -45,7 +45,11 @@ export function deactivate() {
 
 const handleError = (err) => {
     if (err) {
-        vscode.window.showErrorMessage(err.message);
+        if (err.message) {
+            vscode.window.showErrorMessage(err.message);
+        } else {
+            vscode.window.showErrorMessage("Unknown error has occurred");
+        }
     }
 };
 
@@ -76,7 +80,7 @@ class ExecError extends Error {
     stdout: string;
 
     constructor(code: number, stdout: string, stderr: string) {
-        super(stderr.trim());
+        super((stdout+stderr).trim());
 
         // Set the prototype explicitly.
         Object.setPrototypeOf(this, ExecError.prototype);
@@ -122,7 +126,7 @@ function kubectl_portforward(remote): Promise<number> {
     let pod = remoteparts[0];
     let podport = remoteparts[1];
 
-    let cmd = get_conf_or("kubectl-path", "kubectl") + " port-forward " + ` ${pod} :${podport} `;
+    let cmd = get_conf_or("kubectl-path", "kubectl") + " --namespace=squash port-forward " + ` ${pod} :${podport} `;
     console.log("Executing: " + cmd);
     let p = new Promise<number>((resolve, reject) => {
         let resolved = false;
@@ -367,15 +371,16 @@ class SquashExtention {
         // ask the user to chose a pod
         // and image id
         try {
-
+            // TODO: merge selectPod and selectContainer
+            // Get the debugger either in pod annotation or workspace config or debug adapter.
             const pod = await this.selectPod();
             if (pod) {
                 const container = await this.selectContainer(pod)
                 if (container) {
-                    let containerimage = container["image"];
-                    let containername = container["name"];
-                    let podname = pod["metadata"]["name"];
-                    let podnamespace = pod["metadata"]["namespace"];
+                    let containerimage = container.image;
+                    let containername = container.name;
+                    let podname = pod.metadata.name;
+                    let podnamespace = pod.metadata.namespace;
                     console.log(`running debug container ${containerimage}, ${podname}, ${containername}`);
                     await this._debugContainer(containerimage, podnamespace, podname, containername);
                 }
@@ -404,6 +409,7 @@ class SquashExtention {
             return;
         }
         let deadline = process.hrtime();
+        let nowtime;
         deadline[0] += timeout;
 
         let waitcmd = `wait ${dbgconfigid} `;
@@ -414,12 +420,12 @@ class SquashExtention {
             } catch (err) {
                 let errinfojson = JSON.parse(err.stderr);
                 if (errinfojson["Type"] == "Timeout") {
-                    let nowtime = process.hrtime();
+                    nowtime = process.hrtime();
                     if (nowtime[0] > deadline[0]) {
                         throw err;
                     }
                 }
-                if (this.stopWaiting === false) {
+                if (this.stopWaiting === true) {
                     throw err;
                 }
             }
@@ -433,7 +439,7 @@ class SquashExtention {
         this.waiter.showWaiting();
         const debugattachment = await this.waitForAttachment(dbgconfigid, timeout);
         try {
-            if (this.stopWaiting == true) {
+            if (this.stopWaiting === true) {
                 return;
             }
             this.waiter.hideWaiting();
@@ -592,8 +598,6 @@ class SquashExtention {
         return imagearray;
     }
 
-
-
     async findcontainer(imageid, podnamespace, podname): Promise<string> {
         const pods = await this.getPods();
         for (let pod of pods) {
@@ -617,7 +621,7 @@ class SquashExtention {
         const dbgr = await this.chooseDebugger();
         if (dbgr) {
             const attachment = await squash(`debug-container --namespace=${podnamespace} ${imgid} ${podname} ${container} ${dbgr}`);
-            let name = attachment["metadata"]["name"];
+            let name = attachment.metadata.name;
             return name;
         }
     }
