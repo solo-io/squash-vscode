@@ -264,7 +264,7 @@ class SquashExtention {
     }
 
     async chooseDebugger(): Promise<string> {
-        let debuggers = ["gdb", "dlv", "java"]
+        let debuggers = ["gdb", "dlv", "java", "nodejs"]
         const chosen = await vscode.window.showQuickPick(debuggers);
         return chosen;
     }
@@ -484,6 +484,18 @@ class SquashExtention {
                         port: localport,
                         host: "127.0.0.1",
                         remote: true,
+                        cwd: localpath
+                    };
+                    break;
+                case "nodejs":
+                    debuggerconfig = {
+                        type: "nodejs",
+                        request: "attach",
+                        name: "Attach to NodeJS process",
+                        port: localport,
+                        host: "127.0.0.1",
+                        remote: true,
+                        process_name: "node",
                         cwd: localpath
                     };
                     break;
