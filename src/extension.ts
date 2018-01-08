@@ -96,7 +96,7 @@ function kubectl_get<T=any>(cmd: string, ...args: string[]): Promise<T> {
     return kubectl("get -o json " + cmd + " " + args.join(" ")).then(JSON.parse);
 }
 
-function kubectl(cmd): Promise<any> {
+function kubectl(cmd): Promise<string> {
     return exec(get_conf_or("kubectl-path", "kubectl") + " " + cmd);
 }
 
@@ -121,12 +121,22 @@ function get_kubectl_proxy_options(): any {
 function kubectl_portforward(remote): Promise<number> {
     let remoteparts = remote.split(":");
     if (remoteparts.length != 2) {
-        throw new Error('Invalid remote');
+        throw new Error('Invalid remote '+remote);
     }
-    let pod = remoteparts[0];
+    let podaddr = remoteparts[0];
     let podport = remoteparts[1];
 
-    let cmd = get_conf_or("kubectl-path", "kubectl") + " --namespace=squash port-forward " + ` ${pod} :${podport} `;
+    let podparts = podaddr.split(".");
+    if ((remoteparts.length != 2) && (remoteparts.length != 1)) {
+        throw new Error('Invalid remote pod '+remote);
+    }
+    let namespace = "squash";
+    let pod = podparts[0];
+    if (remoteparts.length == 2) {
+        namespace = podparts[1];
+    }
+
+    let cmd = get_conf_or("kubectl-path", "kubectl") + ` --namespace=${namespace} port-forward ${pod} :${podport}`;
     console.log("Executing: " + cmd);
     let p = new Promise<number>((resolve, reject) => {
         let resolved = false;
@@ -329,21 +339,19 @@ class SquashExtention {
 
             this.waiter.showWaiting();
             const dbgconfigname = await this.waitForDebugConfigWithImage(img, dbg);
-            return this.waitAndDebug(dbgconfigname, 10);
+            
+            await this.waitAndDebug(dbgconfigname, 10);
 
         } catch (error) {
             handleError(error)
         }
     }
 
-    stopWaitForServiceSession() {
-        vscode.window.showInformationMessage("Stop waiting for session?", "Yes", "No").then(
-            (answer) => {
-                if (answer == "Yes") {
-                    this.cancelWaiting();
-                }
-            }
-        );
+    async stopWaitForServiceSession() {
+        const answer = await vscode.window.showInformationMessage("Stop waiting for session?", "Yes", "No")
+        if (answer == "Yes") {
+            this.cancelWaiting();
+        }
     }
 
     async waitForDebugRequest(requestname): Promise<string> {
@@ -351,11 +359,10 @@ class SquashExtention {
             if (this.stopWaiting) {
                 return;
             }
-            squash(`list debugrequests  ${requestname}`).then((res) => {
-                if (res["status"]["debug_attachment_ref"]) {
-                    return res["status"]["debug_attachment_ref"];
-                }
-            });
+            const res = await squash<squashinterface.DebugRequest>(`list debugrequests  ${requestname}`);
+            if (res.status.debug_attachment_ref) {
+                return res.status.debug_attachment_ref;
+            }
 
             await asyncTimeout(1000);
         }
@@ -363,7 +370,13 @@ class SquashExtention {
 
     async waitForDebugConfigWithImage(image: string, dbgr: string): Promise<string> {
         const result = await squash<squashinterface.DebugRequest>(`debug-request ${image} ${dbgr}`);
+        if (!result) {
+            throw new Error("can't create debug request");
+        }
         let requestname = result.metadata.name;
+        if (!requestname) {
+            throw new Error("empty debug request name");
+        }
         return await this.waitForDebugRequest(requestname);
     }
 
@@ -408,6 +421,11 @@ class SquashExtention {
         if (this.stopWaiting) {
             return;
         }
+        
+        if (!dbgconfigid) {
+            throw new Error("Empty debug request name");
+        }
+
         let deadline = process.hrtime();
         let nowtime;
         deadline[0] += timeout;

@@ -4,10 +4,6 @@ export interface Metadata {
     namespace: string;
 };
 
-export interface DebugRequest {
-    metadata: Metadata;
-}
-
 export interface DebugAttachment {
     metadata: Metadata;
     spec: DebugAttachmentSpec;
@@ -20,4 +16,13 @@ export interface DebugAttachmentStatus {
 }
 export interface DebugAttachmentSpec {
     debugger: string;
+}
+
+export interface DebugRequest {
+    metadata: Metadata;
+    status: DebugRequestStatus;
+}
+
+export interface DebugRequestStatus {
+    debug_attachment_ref: string;
 }
