@@ -14,9 +14,25 @@ import * as myExtension from '../src/extension';
 // Defines a Mocha test suite to group tests of similar kind together
 suite("Extension Tests", () => {
 
-    // Defines a Mocha unit test
-    test("Something 1", () => {
-        assert.equal(-1, [1, 2, 3].indexOf(5));
-        assert.equal(-1, [1, 2, 3].indexOf(0));
+    test("RemoteDebuggerAddress parses correctly", () => {
+        let rda = new myExtension.RemoteDebuggerAddress("pod.namespace:123");
+
+        assert.equal("pod", rda.podName);
+        assert.equal("namespace", rda.podNamespace);
+        assert.equal("123", rda.port);
+    });
+
+    test("RemoteDebuggerAddress parses default namespace", () => {
+        let rda = new myExtension.RemoteDebuggerAddress("pod:123");
+
+        assert.equal("pod", rda.podName);
+        assert.equal("squash", rda.podNamespace);
+        assert.equal("123", rda.port);
+    });
+
+    test("RemoteDebuggerAddress throws on bad format", () => {
+
+        assert.throws(() => {new myExtension.RemoteDebuggerAddress("unknown")});
+        assert.throws(() => {new myExtension.RemoteDebuggerAddress("another.unknown")});
     });
 });
