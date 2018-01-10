@@ -9,6 +9,30 @@ import { setTimeout } from 'timers';
 import * as kube from './kube-interfaces';
 import * as squashinterface from './squash-interfaces';
 
+export class RemoteDebuggerAddress {
+    podName : string;
+    podNamespace : string;
+    port: string;
+
+    constructor(remote : string) {
+        let remoteparts = remote.split(":");
+        if (remoteparts.length != 2) {
+            throw new Error('Invalid remote '+remote);
+        }
+        let podaddr = remoteparts[0];
+        this.port = remoteparts[1];
+    
+        let podparts = podaddr.split(".");
+        if ((podparts.length != 2) && (podparts.length != 1)) {
+            throw new Error('Invalid remote pod '+remote);
+        }
+        this.podNamespace = "squash";
+        this.podName = podparts[0];
+        if (podparts.length == 2) {
+            this.podNamespace = podparts[1];
+        }
+    }
+}
 
 function asyncTimeout(ms: number): Promise<any> {
     return new Promise((resolve, reject) => {
@@ -119,24 +143,10 @@ function get_kubectl_proxy_options(): any {
 }
 
 function kubectl_portforward(remote): Promise<number> {
-    let remoteparts = remote.split(":");
-    if (remoteparts.length != 2) {
-        throw new Error('Invalid remote '+remote);
-    }
-    let podaddr = remoteparts[0];
-    let podport = remoteparts[1];
 
-    let podparts = podaddr.split(".");
-    if ((remoteparts.length != 2) && (remoteparts.length != 1)) {
-        throw new Error('Invalid remote pod '+remote);
-    }
-    let namespace = "squash";
-    let pod = podparts[0];
-    if (remoteparts.length == 2) {
-        namespace = podparts[1];
-    }
+    let remoteParsed = new RemoteDebuggerAddress(remote);
 
-    let cmd = get_conf_or("kubectl-path", "kubectl") + ` --namespace=${namespace} port-forward ${pod} :${podport}`;
+    let cmd = get_conf_or("kubectl-path", "kubectl") + ` --namespace=${remoteParsed.podNamespace} port-forward ${remoteParsed.podName} :${remoteParsed.port}`;
     console.log("Executing: " + cmd);
     let p = new Promise<number>((resolve, reject) => {
         let resolved = false;
