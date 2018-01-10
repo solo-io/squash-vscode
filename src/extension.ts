@@ -22,7 +22,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Use the console to output diagnostic information (console.log) and errors (console.error)
     // This line of code will only be executed once when your extension is activated
-    console.log('Congratulations, your extension "vscode-smash" is now active!');
+    console.log('Congratulations, your extension "squash-vscode" is now active!');
 
     // The command has been defined in the package.json file
     // Now provide the implementation of the command with  registerCommand
@@ -278,7 +278,7 @@ class SquashExtention {
     }
 
     async chooseDebugger(): Promise<string> {
-        let debuggers = ["gdb", "dlv", "java", "nodejs"]
+        let debuggers = ["gdb", "dlv", "java", "nodejs", "nodejs8"]
         const chosen = await vscode.window.showQuickPick(debuggers);
         return chosen;
     }
@@ -369,7 +369,8 @@ class SquashExtention {
     }
 
     async waitForDebugConfigWithImage(image: string, dbgr: string): Promise<string> {
-        const result = await squash<squashinterface.DebugRequest>(`debug-request ${image} ${dbgr}`);
+        let pname = get_conf_or("process-name", "")
+        const result = await squash<squashinterface.DebugRequest>(`debug-request ${image} ${dbgr} ${pname}`);
         if (!result) {
             throw new Error("can't create debug request");
         }
@@ -478,7 +479,7 @@ class SquashExtention {
             // die with it, thus killing the forwarder, making this not a big problem.
             const localport = await kubectl_portforward(remote)
             console.log("Local port forward for debug server is: localhost:" + localport);
-            vscode.window.showInformationMessage('Starting debug session' + remote);
+            vscode.window.showInformationMessage('Starting debug session: ' + remote);
             let remotepath = get_conf_or("remotePath", null);
             let localpath = vscode.workspace.rootPath;
             let debuggerconfig;
@@ -506,21 +507,19 @@ class SquashExtention {
                         request: "attach",
                         name: "Attach to java process",
                         port: localport,
-                        host: "127.0.0.1",
-                        remote: true,
-                        cwd: localpath
+                        hostName: "127.0.0.1",                                                
                     };
                     break;
                 case "nodejs":
+                case "nodejs8":
                     debuggerconfig = {
-                        type: "nodejs",
+                        type: "node",
                         request: "attach",
-                        name: "Attach to NodeJS process",
+                        name: "Attach to Remote",
+                        address: "127.0.0.1",
                         port: localport,
-                        host: "127.0.0.1",
-                        remote: true,
-                        process_name: "node",
-                        cwd: localpath
+                        localRoot: localpath,
+                        remoteRoot: remotepath                                         
                     };
                     break;
                 case "gdb":
@@ -650,7 +649,8 @@ class SquashExtention {
 
         const dbgr = await this.chooseDebugger();
         if (dbgr) {
-            const attachment = await squash(`debug-container --namespace=${podnamespace} ${imgid} ${podname} ${container} ${dbgr}`);
+            let pname = get_conf_or("process-name", "")
+            const attachment = await squash(`debug-container --namespace=${podnamespace} ${imgid} ${podname} ${container} ${dbgr} ${pname}`);
             let name = attachment.metadata.name;
             return name;
         }
