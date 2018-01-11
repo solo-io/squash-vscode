@@ -660,7 +660,11 @@ class SquashExtention {
         const dbgr = await this.chooseDebugger();
         if (dbgr) {
             let pname = get_conf_or("process-name", "")
-            const attachment = await squash(`debug-container --namespace=${podnamespace} ${imgid} ${podname} ${container} ${dbgr} ${pname}`);
+            let cmdline = `debug-container --namespace=${podnamespace} ${imgid} ${podname} ${container} ${dbgr}`
+            if (pname != "") {
+                cmdline += ` -p ${pname}`
+            }
+            const attachment = await squash(cmdline);
             let name = attachment.metadata.name;
             return name;
         }
