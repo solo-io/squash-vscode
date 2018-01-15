@@ -83,6 +83,11 @@
                     "type": "string",
                     "default": null,
                     "description": "Name of the process to debug. [Optional]"
+                },
+                "vs-squash.pythonSecret": {
+                    "type" : "string",
+                    "default": null,
+                    "description": "PTVSD secret for remote Python debugging [Optional]"
                 }                
             }
         },

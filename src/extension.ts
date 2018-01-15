@@ -288,7 +288,7 @@ class SquashExtention {
     }
 
     async chooseDebugger(): Promise<string> {
-        let debuggers = ["gdb", "dlv", "java", "nodejs", "nodejs8"]
+        let debuggers = ["gdb", "dlv", "java", "nodejs", "nodejs8", "python"]
         const chosen = await vscode.window.showQuickPick(debuggers);
         return chosen;
     }
@@ -534,6 +534,19 @@ class SquashExtention {
                         port: localport,
                         localRoot: localpath,
                         remoteRoot: remotepath                                         
+                    };
+                    break;
+                case "python":
+                    let ptvsdsecret = get_conf_or("pythonSecret", "");
+                    debuggerconfig = {
+                        type: "python",
+                        request: "attach",
+                        name: "Python: Attach",
+                        localRoot: localpath,
+                        remoteRoot: remotepath,
+                        port: localport,
+                        secret: ptvsdsecret,
+                        host: "127.0.0.1"                          
                     };
                     break;
                 case "gdb":
