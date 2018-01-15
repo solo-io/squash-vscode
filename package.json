@@ -78,7 +78,17 @@
                     "type": "string",
                     "default": null,
                     "description": "The path of the sources in side the container for path substitution (workspace settings, usually)."
-                }
+                },
+                "vs-squash.process-name": {
+                    "type": "string",
+                    "default": null,
+                    "description": "Name of the process to debug. [Optional]"
+                },
+                "vs-squash.pythonSecret": {
+                    "type" : "string",
+                    "default": null,
+                    "description": "PTVSD secret for remote Python debugging [Optional]"
+                }                
             }
         },
         "commands": [

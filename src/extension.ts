@@ -46,7 +46,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Use the console to output diagnostic information (console.log) and errors (console.error)
     // This line of code will only be executed once when your extension is activated
-    console.log('Congratulations, your extension "vscode-smash" is now active!');
+    console.log('Congratulations, your extension "squash-vscode" is now active!');
 
     // The command has been defined in the package.json file
     // Now provide the implementation of the command with  registerCommand
@@ -288,7 +288,7 @@ class SquashExtention {
     }
 
     async chooseDebugger(): Promise<string> {
-        let debuggers = ["gdb", "dlv", "java"]
+        let debuggers = ["gdb", "dlv", "java", "nodejs", "nodejs8", "python"]
         const chosen = await vscode.window.showQuickPick(debuggers);
         return chosen;
     }
@@ -379,7 +379,12 @@ class SquashExtention {
     }
 
     async waitForDebugConfigWithImage(image: string, dbgr: string): Promise<string> {
-        const result = await squash<squashinterface.DebugRequest>(`debug-request ${image} ${dbgr}`);
+        let pname = get_conf_or("process-name", "")
+        let cmdline = `debug-request ${image} ${dbgr}`
+        if (pname != "") {
+            cmdline += ` -p ${pname}`
+        }        
+        const result = await squash<squashinterface.DebugRequest>(cmdline);        
         if (!result) {
             throw new Error("can't create debug request");
         }
@@ -488,7 +493,7 @@ class SquashExtention {
             // die with it, thus killing the forwarder, making this not a big problem.
             const localport = await kubectl_portforward(remote)
             console.log("Local port forward for debug server is: localhost:" + localport);
-            vscode.window.showInformationMessage('Starting debug session' + remote);
+            vscode.window.showInformationMessage('Starting debug session: ' + remote);
             let remotepath = get_conf_or("remotePath", null);
             let localpath = vscode.workspace.rootPath;
             let debuggerconfig;
@@ -516,9 +521,32 @@ class SquashExtention {
                         request: "attach",
                         name: "Attach to java process",
                         port: localport,
-                        host: "127.0.0.1",
-                        remote: true,
-                        cwd: localpath
+                        hostName: "127.0.0.1",                                                
+                    };
+                    break;
+                case "nodejs":
+                case "nodejs8":
+                    debuggerconfig = {
+                        type: "node",
+                        request: "attach",
+                        name: "Attach to Remote",
+                        address: "127.0.0.1",
+                        port: localport,
+                        localRoot: localpath,
+                        remoteRoot: remotepath                                         
+                    };
+                    break;
+                case "python":
+                    let ptvsdsecret = get_conf_or("pythonSecret", "");
+                    debuggerconfig = {
+                        type: "python",
+                        request: "attach",
+                        name: "Python: Attach",
+                        localRoot: localpath,
+                        remoteRoot: remotepath,
+                        port: localport,
+                        secret: ptvsdsecret,
+                        host: "127.0.0.1"                          
                     };
                     break;
                 case "gdb":
@@ -648,7 +676,12 @@ class SquashExtention {
 
         const dbgr = await this.chooseDebugger();
         if (dbgr) {
-            const attachment = await squash(`debug-container --namespace=${podnamespace} ${imgid} ${podname} ${container} ${dbgr}`);
+            let pname = get_conf_or("process-name", "")
+            let cmdline = `debug-container --namespace=${podnamespace} ${imgid} ${podname} ${container} ${dbgr}`
+            if (pname != "") {
+                cmdline += ` -p ${pname}`
+            }
+            const attachment = await squash(cmdline);
             let name = attachment.metadata.name;
             return name;
         }
