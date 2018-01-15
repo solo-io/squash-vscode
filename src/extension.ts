@@ -380,7 +380,11 @@ class SquashExtention {
 
     async waitForDebugConfigWithImage(image: string, dbgr: string): Promise<string> {
         let pname = get_conf_or("process-name", "")
-        const result = await squash<squashinterface.DebugRequest>(`debug-request ${image} ${dbgr} ${pname}`);
+        let cmdline = `debug-request ${image} ${dbgr}`
+        if (pname != "") {
+            cmdline += ` -p ${pname}`
+        }        
+        const result = await squash<squashinterface.DebugRequest>(cmdline);        
         if (!result) {
             throw new Error("can't create debug request");
         }
