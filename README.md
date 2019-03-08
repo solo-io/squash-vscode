@@ -1,4 +1,11 @@
+# Deprecated - please see the [Squash Repo](https://github.com/solo-io/squash)
+* Active development occurs in the Squash repo.
+* [https://github.com/solo-io/squash](https://github.com/solo-io/squash)
 
+
+ <br>
+<br>
+<br>
 
 <h1 align="center">
     <img src="https://i.imgur.com/gkTwlfO.png" alt="squash" width="200" height="248">
